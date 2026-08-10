@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickLink — Shorten Your URLs Instantly</title>
+  <meta name="description" content="Transform long, ugly URLs into short, trackable links with QR codes and click analytics.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+</head>
+<body>
+
+  <!-- Skip Link for Keyboard Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="navbar__container">
+      <a href="/" class="navbar__logo">
+        <span class="navbar__logo-icon">🔗</span> QuickLink
+      </a>
+      <span class="navbar__tagline">The Modern Link Engine</span>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main id="main-content" class="page-wrapper">
+    
+    <!-- Hero / Intro -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <h1 id="hero-heading" class="hero__title">Shorten Your URLs Instantly</h1>
+      <p class="hero__subtitle">Fast, Free, and Reliable URL Shortener with Analytics and QR Codes</p>
+    </section>
+
+    <!-- Main URL Shortening Panel -->
+    <section class="shortener-panel" aria-label="URL Shortener form">
+      <div class="glass-card">
+        <form id="shorten-form" class="form" novalidate>
+          <div class="form__group">
+            <label for="url-input" class="form__label">Long URL</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">🌐</span>
+              <input 
+                id="url-input" 
+                type="url" 
+                class="form__input" 
+                placeholder="Paste your long URL here (starts with http:// or https://)..." 
+                required
+              >
+            </div>
+            <span id="url-input-error" class="form__error-message" aria-live="assertive"></span>
+          </div>
+
+          <div class="form__group">
+            <label for="alias-input" class="form__label">Custom Alias <span class="form__label-optional">(optional)</span></label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">✨</span>
+              <input 
+                id="alias-input" 
+                type="text" 
+                class="form__input" 
+                placeholder="e.g. my-brand"
+                maxlength="30"
+              >
+            </div>
+            <span id="alias-input-error" class="form__error-message" aria-live="assertive"></span>
+          </div>
+
+          <button id="submit-btn" type="submit" class="btn btn--primary">
+            <span class="btn__text">Shorten URL</span>
+            <span class="spinner btn__spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Shortening Result Container (Hidden by default) -->
+    <section id="result-section" class="result-section" aria-labelledby="result-heading" hidden>
+      <div class="glass-card result-card">
+        <h2 id="result-heading" class="result-card__title">🎉 Your short URL is ready!</h2>
+        
+        <div class="result-card__body">
+          <div class="result-card__url-box">
+            <div id="short-url-display" class="result-card__short-url" tabIndex="0"></div>
+            <button id="copy-btn" class="btn btn--outline" aria-label="Copy short URL to clipboard">
+              <span class="btn__text">📋 Copy</span>
+            </button>
+          </div>
+
+          <div class="result-card__details">
+            <div class="result-card__qr-box">
+              <h3 class="result-card__qr-title">Scan QR Code</h3>
+              <div class="qr-code-container">
+                <img id="qr-image" src="" alt="QR Code link redirect" class="qr-code-img">
+              </div>
+              <a id="download-qr-btn" href="#" download="quicklink-qr.png" class="btn btn--outline btn--sm">⬇️ Download QR</a>
+            </div>
+
+            <div class="result-card__stats-box">
+              <h3 class="result-card__stats-title">Link Details</h3>
+              <table class="stats-table">
+                <tr>
+                  <td>Original URL:</td>
+                  <td id="stat-original-url" class="stats-table__val"></td>
+                </tr>
+                <tr>
+                  <td>Short Code:</td>
+                  <td id="stat-short-code" class="stats-table__val"></td>
+                </tr>
+                <tr>
+                  <td>Expires At:</td>
+                  <td id="stat-expires-at" class="stats-table__val"></td>
+                </tr>
+                <tr>
+                  <td>Clicks Count:</td>
+                  <td id="stat-clicks" class="stats-table__val"></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <button id="reset-form-btn" class="btn btn--text">🔗 Shorten Another URL</button>
+      </div>
+    </section>
+
+    <!-- History / Dashboard Table -->
+    <section class="history-section" aria-labelledby="history-heading">
+      <h2 id="history-heading" class="history-section__title">📊 Recent Shortened URLs</h2>
+      
+      <div class="glass-card history-card">
+        <div class="table-responsive">
+          <table id="history-table" class="history-table">
+            <thead>
+              <tr>
+                <th scope="col">Original URL</th>
+                <th scope="col">Short URL</th>
+                <th scope="col">Clicks</th>
+                <th scope="col">Created</th>
+                <th scope="col" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- History Empty State -->
+        <div id="history-empty" class="history-empty">
+          <span class="history-empty__icon">📭</span>
+          <p class="history-empty__text">No URLs shortened yet. Enter a link above to get started!</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer__text">© 2026 QuickLink · Built with ❤️ on Google Antigravity</p>
+  </footer>
+
+  <!-- Toast Notification Wrapper -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Frontend Logic Script -->
+  <script src="js/main.js"></script>
+</body>
+</html>
