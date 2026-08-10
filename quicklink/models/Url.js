@@ -45,10 +45,14 @@ const urlSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
 });
 
-// Add indexes on shortCode and createdAt
-urlSchema.index({ shortCode: 1 }, { unique: true });
+// Add index on createdAt
 urlSchema.index({ createdAt: -1 });
 
 /**

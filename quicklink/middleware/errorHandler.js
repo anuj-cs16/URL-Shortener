@@ -27,8 +27,21 @@ const notFound = (req, res, next) => {
  * @param {Function} next - Express next function.
  */
 const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  
+  let statusCode = err.statusCode || 500;
+  let message = err.message;
+
+  // Handle Mongoose validation errors
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = Object.values(err.errors).map((val) => val.message).join(', ');
+  }
+
+  // Handle Mongoose duplicate key errors (code 11000)
+  if (err.code === 11000) {
+    statusCode = 400;
+    message = 'Duplicate field value entered';
+  }
+
   // Log error with timestamp
   console.error(`[${new Date().toISOString()}] [Error ${statusCode}]: ${err.message}`);
   
@@ -37,7 +50,7 @@ const errorHandler = (err, req, res, next) => {
   if (statusCode === 404) {
     responseMessage = 'The requested resource could not be found';
   } else if (err.exposeMessage || statusCode === 400 || statusCode === 410) {
-    responseMessage = err.message;
+    responseMessage = message;
   }
 
   res.status(statusCode).json({

@@ -11,7 +11,16 @@
 
 const QRCode = require('qrcode');
 const Url = require('../models/Url');
+const Click = require('../models/Click');
 const generateShortCode = require('../utils/generateShortCode');
+const {
+  getClientIP,
+  getLocationInfo,
+  getDeviceType,
+  getBrowserInfo,
+  getOSInfo,
+  getReferrer,
+} = require('../utils/analyticsHelper');
 
 /**
  * Creates a shortened URL from a long URL.
@@ -57,8 +66,15 @@ const createShortUrl = async (req, res, next) => {
       longUrl,
       shortCode,
       customCode: customCode || null,
+      userId: req.user ? req.user._id : null,
     });
     await newUrl.save();
+
+    // Increment user url count stats if logged in
+    if (req.user) {
+      req.user.totalUrlsCreated += 1;
+      await req.user.save();
+    }
 
     // Construct full short URL and generate QR code
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
@@ -111,7 +127,35 @@ const redirectToLongUrl = async (req, res, next) => {
       });
     }
 
-    // Increment click tracking parameters
+    // Capture analytical parameters
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = getClientIP(req);
+    const location = getLocationInfo(ip);
+    const device = getDeviceType(userAgent);
+    const browser = getBrowserInfo(userAgent);
+    const os = getOSInfo(userAgent);
+    const referrerHeader = req.headers.referer || req.headers.referrer;
+    const referrer = getReferrer(referrerHeader);
+
+    // Save detailed Click tracking record
+    const click = new Click({
+      urlId: url._id,
+      shortCode: url.shortCode,
+      userId: url.userId,
+      ipAddress: ip,
+      country: location.country,
+      countryCode: location.countryCode,
+      city: location.city,
+      browser: browser.browser || browser.name || 'Unknown',
+      browserVersion: browser.version || 'Unknown',
+      operatingSystem: os,
+      deviceType: device,
+      referrer: referrer,
+      clickedAt: new Date(),
+    });
+    await click.save();
+
+    // Increment click tracking parameters on original URL doc
     url.clicks += 1;
     url.lastClickedAt = new Date();
     await url.save();
@@ -133,7 +177,17 @@ const redirectToLongUrl = async (req, res, next) => {
  */
 const getAllUrls = async (req, res, next) => {
   try {
-    const urls = await Url.find().sort({ createdAt: -1 });
+    // If guest, return empty history array
+    if (!req.user) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        data: [],
+      });
+    }
+
+    // Authenticated users retrieve only their URLs
+    const urls = await Url.find({ userId: req.user._id }).sort({ createdAt: -1 });
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
 
     const formattedUrls = urls.map((url) => {
@@ -208,13 +262,33 @@ const deleteUrl = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
 
-    const deletedUrl = await Url.findOneAndDelete({ shortCode });
-    if (!deletedUrl) {
+    const url = await Url.findOne({ shortCode });
+    if (!url) {
       return res.status(404).json({
         success: false,
         message: 'Short URL not found',
       });
     }
+
+    // Verify ownership
+    if (req.user) {
+      if (!url.userId || url.userId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own URLs',
+        });
+      }
+    } else {
+      // Guests can only delete Guest URLs (userId is null)
+      if (url.userId !== null) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own URLs',
+        });
+      }
+    }
+
+    await Url.findOneAndDelete({ shortCode });
 
     res.status(200).json({
       success: true,

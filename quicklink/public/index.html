@@ -22,141 +22,335 @@
   <!-- Header / Navigation -->
   <header class="navbar">
     <div class="navbar__container">
-      <a href="/" class="navbar__logo">
+      <a href="/" class="navbar__logo" id="nav-logo">
         <span class="navbar__logo-icon">🔗</span> QuickLink
       </a>
-      <span class="navbar__tagline">The Modern Link Engine</span>
+      
+      <div id="navbar-auth" class="navbar__auth">
+        <!-- Logged out states -->
+        <div id="nav-logged-out" class="nav-auth-buttons">
+          <button id="nav-login-btn" class="btn btn--outline btn--sm">Login</button>
+          <button id="nav-signup-btn" class="btn btn--primary btn--sm" style="height: 34px; width: auto; padding: 0 16px; margin-left: 8px;">Sign Up</button>
+        </div>
+        <!-- Logged in states -->
+        <div id="nav-logged-in" class="user-menu" style="display: none;">
+          <span id="nav-username" class="user-menu__name"></span>
+          <button id="nav-dashboard-btn" class="btn btn--outline btn--sm" style="margin-left: 10px;">Dashboard</button>
+          <a href="analytics.html" id="nav-analytics-btn" class="btn btn--outline btn--sm" style="margin-left: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 34px;">📊 Analytics</a>
+          <button id="nav-logout-btn" class="btn btn--outline btn--sm" style="margin-left: 8px; border-color: rgba(255,82,82,0.3); color: var(--error-color);">Logout</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Main Content Layout -->
   <main id="main-content" class="page-wrapper">
     
-    <!-- Hero / Intro -->
-    <section class="hero" aria-labelledby="hero-heading">
-      <h1 id="hero-heading" class="hero__title">Shorten Your URLs Instantly</h1>
-      <p class="hero__subtitle">Fast, Free, and Reliable URL Shortener with Analytics and QR Codes</p>
-    </section>
+    <!-- MAIN APP CONTENT (Home view) -->
+    <div id="main-app-content">
+      <!-- Hero / Intro -->
+      <section class="hero" aria-labelledby="hero-heading">
+        <h1 id="hero-heading" class="hero__title">Shorten Your URLs Instantly</h1>
+        <p class="hero__subtitle">Fast, Free, and Reliable URL Shortener with Analytics and QR Codes</p>
+      </section>
 
-    <!-- Main URL Shortening Panel -->
-    <section class="shortener-panel" aria-label="URL Shortener form">
-      <div class="glass-card">
-        <form id="shorten-form" class="form" novalidate>
-          <div class="form__group">
-            <label for="url-input" class="form__label">Long URL</label>
-            <div class="form__input-wrapper">
-              <span class="form__input-icon">🌐</span>
-              <input 
-                id="url-input" 
-                type="url" 
-                class="form__input" 
-                placeholder="Paste your long URL here (starts with http:// or https://)..." 
-                required
-              >
+      <!-- Main URL Shortening Panel -->
+      <section class="shortener-panel" aria-label="URL Shortener form">
+        <div class="glass-card">
+          <form id="shorten-form" class="form" novalidate>
+            <div class="form__group">
+              <label for="url-input" class="form__label">Long URL</label>
+              <div class="form__input-wrapper">
+                <span class="form__input-icon">🌐</span>
+                <input 
+                  id="url-input" 
+                  type="url" 
+                  class="form__input" 
+                  placeholder="Paste your long URL here (starts with http:// or https://)..." 
+                  required
+                >
+              </div>
+              <span id="url-input-error" class="form__error-message" aria-live="assertive"></span>
             </div>
-            <span id="url-input-error" class="form__error-message" aria-live="assertive"></span>
+
+            <div class="form__group">
+              <label for="alias-input" class="form__label">Custom Alias <span class="form__label-optional">(optional)</span></label>
+              <div class="form__input-wrapper">
+                <span class="form__input-icon">✨</span>
+                <input 
+                  id="alias-input" 
+                  type="text" 
+                  class="form__input" 
+                  placeholder="e.g. my-brand"
+                  maxlength="30"
+                >
+              </div>
+              <span id="alias-input-error" class="form__error-message" aria-live="assertive"></span>
+            </div>
+
+            <button id="submit-btn" type="submit" class="btn btn--primary">
+              <span class="btn__text">Shorten URL</span>
+              <span class="spinner btn__spinner" aria-hidden="true"></span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Shortening Result Container (Hidden by default) -->
+      <section id="result-section" class="result-section" aria-labelledby="result-heading" hidden>
+        <div class="glass-card result-card">
+          <h2 id="result-heading" class="result-card__title">🎉 Your short URL is ready!</h2>
+          
+          <div class="result-card__body">
+            <div class="result-card__url-box">
+              <div id="short-url-display" class="result-card__short-url" tabIndex="0"></div>
+              <button id="copy-btn" class="btn btn--outline" aria-label="Copy short URL to clipboard">
+                <span class="btn__text">📋 Copy</span>
+              </button>
+            </div>
+
+            <div class="result-card__details">
+              <div class="result-card__qr-box">
+                <h3 class="result-card__qr-title">Scan QR Code</h3>
+                <div class="qr-code-container">
+                  <img id="qr-image" src="" alt="QR Code link redirect" class="qr-code-img">
+                </div>
+                <a id="download-qr-btn" href="#" download="quicklink-qr.png" class="btn btn--outline btn--sm">⬇️ Download QR</a>
+              </div>
+
+              <div class="result-card__stats-box">
+                <h3 class="result-card__stats-title">Link Details</h3>
+                <table class="stats-table">
+                  <tr>
+                    <td>Original URL:</td>
+                    <td id="stat-original-url" class="stats-table__val"></td>
+                  </tr>
+                  <tr>
+                    <td>Short Code:</td>
+                    <td id="stat-short-code" class="stats-table__val"></td>
+                  </tr>
+                  <tr>
+                    <td>Expires At:</td>
+                    <td id="stat-expires-at" class="stats-table__val"></td>
+                  </tr>
+                  <tr>
+                    <td>Clicks Count:</td>
+                    <td id="stat-clicks" class="stats-table__val"></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <button id="reset-form-btn" class="btn btn--text">🔗 Shorten Another URL</button>
+        </div>
+      </section>
+
+      <!-- History / Dashboard Table -->
+      <section class="history-section" aria-labelledby="history-heading">
+        <h2 id="history-heading" class="history-section__title">📊 Recent Shortened URLs</h2>
+        
+        <div class="glass-card history-card">
+          <div class="table-responsive">
+            <table id="history-table" class="history-table" style="display: none;">
+              <thead>
+                <tr>
+                  <th scope="col">Original URL</th>
+                  <th scope="col">Short URL</th>
+                  <th scope="col">Clicks</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">Analytics</th>
+                  <th scope="col" class="text-right">Delete</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- History Empty State -->
+          <div id="history-empty" class="history-empty" style="display: none;">
+            <span class="history-empty__icon">📭</span>
+            <p class="history-empty__text">No URLs shortened yet. Enter a link above to get started!</p>
+          </div>
+
+          <!-- History Login Prompt (Guests only) -->
+          <div id="history-login-prompt" class="history-empty">
+            <span class="history-empty__icon">🔒</span>
+            <p class="history-empty__text">Login to save and track your URLs</p>
+            <button id="history-login-btn" class="btn btn--outline btn--sm" style="margin-top: 15px;">Login Now</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Login Section -->
+    <section id="login-section" class="auth-section" hidden>
+      <div class="glass-card auth-container">
+        <h2 class="auth-card__title">🔑 Login to QuickLink</h2>
+        <form id="login-form" class="form" novalidate>
+          <div class="form__group">
+            <label for="login-email" class="form__label">Email Address</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">✉️</span>
+              <input id="login-email" type="email" class="form__input" placeholder="Enter your email..." required>
+            </div>
+            <span id="login-email-error" class="form__error-message" aria-live="assertive"></span>
           </div>
 
           <div class="form__group">
-            <label for="alias-input" class="form__label">Custom Alias <span class="form__label-optional">(optional)</span></label>
+            <label for="login-password" class="form__label">Password</label>
             <div class="form__input-wrapper">
-              <span class="form__input-icon">✨</span>
-              <input 
-                id="alias-input" 
-                type="text" 
-                class="form__input" 
-                placeholder="e.g. my-brand"
-                maxlength="30"
-              >
+              <span class="form__input-icon">🔒</span>
+              <input id="login-password" type="password" class="form__input" placeholder="Enter your password..." required>
+              <button type="button" id="login-password-toggle" class="password-toggle-btn" aria-label="Toggle password visibility">👁️</button>
             </div>
-            <span id="alias-input-error" class="form__error-message" aria-live="assertive"></span>
+            <span id="login-password-error" class="form__error-message" aria-live="assertive"></span>
           </div>
 
-          <button id="submit-btn" type="submit" class="btn btn--primary">
-            <span class="btn__text">Shorten URL</span>
+          <div class="form__row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <label class="checkbox-container" style="display: inline-flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">
+              <input type="checkbox" id="login-remember" style="margin-right: 6px;"> Remember me
+            </label>
+          </div>
+
+          <button id="login-submit-btn" type="submit" class="btn btn--primary">
+            <span class="btn__text">Login</span>
             <span class="spinner btn__spinner" aria-hidden="true"></span>
           </button>
         </form>
+        <p class="auth-card__footer">Don't have an account? <a href="#" id="go-to-signup">Sign Up</a></p>
+        <button id="login-cancel-btn" class="btn btn--text" style="margin-top: 10px; text-decoration: none;">← Cancel</button>
       </div>
     </section>
 
-    <!-- Shortening Result Container (Hidden by default) -->
-    <section id="result-section" class="result-section" aria-labelledby="result-heading" hidden>
-      <div class="glass-card result-card">
-        <h2 id="result-heading" class="result-card__title">🎉 Your short URL is ready!</h2>
-        
-        <div class="result-card__body">
-          <div class="result-card__url-box">
-            <div id="short-url-display" class="result-card__short-url" tabIndex="0"></div>
-            <button id="copy-btn" class="btn btn--outline" aria-label="Copy short URL to clipboard">
-              <span class="btn__text">📋 Copy</span>
-            </button>
+    <!-- Signup Section -->
+    <section id="signup-section" class="auth-section" hidden>
+      <div class="glass-card auth-container">
+        <h2 class="auth-card__title">✨ Create Account</h2>
+        <form id="signup-form" class="form" novalidate>
+          <div class="form__group">
+            <label for="signup-name" class="form__label">Your Name</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">👤</span>
+              <input id="signup-name" type="text" class="form__input" placeholder="Enter your name..." required>
+            </div>
+            <span id="signup-name-error" class="form__error-message" aria-live="assertive"></span>
           </div>
 
-          <div class="result-card__details">
-            <div class="result-card__qr-box">
-              <h3 class="result-card__qr-title">Scan QR Code</h3>
-              <div class="qr-code-container">
-                <img id="qr-image" src="" alt="QR Code link redirect" class="qr-code-img">
-              </div>
-              <a id="download-qr-btn" href="#" download="quicklink-qr.png" class="btn btn--outline btn--sm">⬇️ Download QR</a>
+          <div class="form__group">
+            <label for="signup-email" class="form__label">Email Address</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">✉️</span>
+              <input id="signup-email" type="email" class="form__input" placeholder="Enter your email..." required>
             </div>
-
-            <div class="result-card__stats-box">
-              <h3 class="result-card__stats-title">Link Details</h3>
-              <table class="stats-table">
-                <tr>
-                  <td>Original URL:</td>
-                  <td id="stat-original-url" class="stats-table__val"></td>
-                </tr>
-                <tr>
-                  <td>Short Code:</td>
-                  <td id="stat-short-code" class="stats-table__val"></td>
-                </tr>
-                <tr>
-                  <td>Expires At:</td>
-                  <td id="stat-expires-at" class="stats-table__val"></td>
-                </tr>
-                <tr>
-                  <td>Clicks Count:</td>
-                  <td id="stat-clicks" class="stats-table__val"></td>
-                </tr>
-              </table>
-            </div>
+            <span id="signup-email-error" class="form__error-message" aria-live="assertive"></span>
           </div>
-        </div>
 
-        <button id="reset-form-btn" class="btn btn--text">🔗 Shorten Another URL</button>
+          <div class="form__group">
+            <label for="signup-password" class="form__label">Password</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">🔒</span>
+              <input id="signup-password" type="password" class="form__input" placeholder="Minimum 8 characters..." required>
+              <button type="button" id="signup-password-toggle" class="password-toggle-btn" aria-label="Toggle password visibility">👁️</button>
+            </div>
+            <!-- Password strength indicator bar -->
+            <div class="password-strength-wrapper">
+              <div id="password-strength-bar" class="password-strength-bar"></div>
+            </div>
+            <span id="signup-password-error" class="form__error-message" aria-live="assertive"></span>
+          </div>
+
+          <div class="form__group">
+            <label for="signup-confirm-password" class="form__label">Confirm Password</label>
+            <div class="form__input-wrapper">
+              <span class="form__input-icon">🔒</span>
+              <input id="signup-confirm-password" type="password" class="form__input" placeholder="Confirm your password..." required>
+            </div>
+            <span id="signup-confirm-password-error" class="form__error-message" aria-live="assertive"></span>
+          </div>
+
+          <button id="signup-submit-btn" type="submit" class="btn btn--primary">
+            <span class="btn__text">Sign Up</span>
+            <span class="spinner btn__spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+        <p class="auth-card__footer">Already have an account? <a href="#" id="go-to-login">Login</a></p>
+        <button id="signup-cancel-btn" class="btn btn--text" style="margin-top: 10px; text-decoration: none;">← Cancel</button>
       </div>
     </section>
 
-    <!-- History / Dashboard Table -->
-    <section class="history-section" aria-labelledby="history-heading">
-      <h2 id="history-heading" class="history-section__title">📊 Recent Shortened URLs</h2>
+    <!-- Dashboard Section -->
+    <section id="dashboard-section" class="dashboard-section" hidden>
+      <h2 class="history-section__title">👤 User Dashboard</h2>
       
-      <div class="glass-card history-card">
-        <div class="table-responsive">
-          <table id="history-table" class="history-table">
-            <thead>
-              <tr>
-                <th scope="col">Original URL</th>
-                <th scope="col">Short URL</th>
-                <th scope="col">Clicks</th>
-                <th scope="col">Created</th>
-                <th scope="col" class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="history-table-body">
-              <!-- Dynamically populated rows -->
-            </tbody>
-          </table>
+      <!-- Stats Cards -->
+      <div class="dashboard-grid">
+        <div class="glass-card dashboard-card">
+          <span class="dashboard-card__icon">👋</span>
+          <div class="dashboard-card__content">
+            <span class="dashboard-card__label">Welcome</span>
+            <span id="dash-welcome-name" class="dashboard-card__value">User</span>
+          </div>
+        </div>
+        
+        <div class="glass-card dashboard-card">
+          <span class="dashboard-card__icon">🔗</span>
+          <div class="dashboard-card__content">
+            <span class="dashboard-card__label">URLs Created</span>
+            <span id="dash-urls-count" class="dashboard-card__value">0</span>
+          </div>
         </div>
 
-        <!-- History Empty State -->
-        <div id="history-empty" class="history-empty">
-          <span class="history-empty__icon">📭</span>
-          <p class="history-empty__text">No URLs shortened yet. Enter a link above to get started!</p>
+        <div class="glass-card dashboard-card">
+          <span class="dashboard-card__icon">📅</span>
+          <div class="dashboard-card__content">
+            <span class="dashboard-card__label">Member Since</span>
+            <span id="dash-created-date" class="dashboard-card__value">—</span>
+          </div>
         </div>
+      </div>
+
+      <!-- Settings Cards: Update Profile and Change Password -->
+      <div class="settings-grid">
+        <div class="glass-card settings-card">
+          <h3 class="result-card__stats-title">Update Profile</h3>
+          <form id="profile-form" class="form" novalidate>
+            <div class="form__group">
+              <label for="profile-name" class="form__label">Name</label>
+              <input id="profile-name" type="text" class="form__input" style="padding-left: 16px;" required>
+              <span id="profile-name-error" class="form__error-message"></span>
+            </div>
+            <div class="form__group">
+              <label for="profile-email" class="form__label">Email Address</label>
+              <input id="profile-email" type="email" class="form__input" style="padding-left: 16px;" required>
+              <span id="profile-email-error" class="form__error-message"></span>
+            </div>
+            <button type="submit" id="profile-submit-btn" class="btn btn--outline btn--sm" style="width: 100%; height: 42px;">Save Profile</button>
+          </form>
+        </div>
+
+        <div class="glass-card settings-card">
+          <h3 class="result-card__stats-title">Change Password</h3>
+          <form id="password-form" class="form" novalidate>
+            <div class="form__group">
+              <label for="password-current" class="form__label">Current Password</label>
+              <input id="password-current" type="password" class="form__input" style="padding-left: 16px;" required>
+              <span id="password-current-error" class="form__error-message"></span>
+            </div>
+            <div class="form__group">
+              <label for="password-new" class="form__label">New Password</label>
+              <input id="password-new" type="password" class="form__input" style="padding-left: 16px;" placeholder="Min. 8 characters" required>
+              <span id="password-new-error" class="form__error-message"></span>
+            </div>
+            <button type="submit" id="password-submit-btn" class="btn btn--outline btn--sm" style="width: 100%; height: 42px;">Update Password</button>
+          </form>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button id="dashboard-back-btn" class="btn btn--primary" style="width: auto; padding: 0 32px;">Back to Shortener</button>
       </div>
     </section>
 

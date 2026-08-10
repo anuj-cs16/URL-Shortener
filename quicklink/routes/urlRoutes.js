@@ -23,18 +23,19 @@ const {
 
 const validateUrl = require('../middleware/validateUrl');
 const rateLimiter = require('../middleware/rateLimiter');
+const { optionalAuth } = require('../middleware/auth');
 
 // Create shortened URL endpoint (with rate limiter and format validator)
-router.post('/api/shorten', rateLimiter, validateUrl, createShortUrl);
+router.post('/api/shorten', rateLimiter, optionalAuth, validateUrl, createShortUrl);
 
 // Retrieve URL collection history endpoint
-router.get('/api/urls', getAllUrls);
+router.get('/api/urls', optionalAuth, getAllUrls);
 
 // Retrieve click statistics for a short URL
 router.get('/api/urls/:shortCode', getUrlStats);
 
 // Delete shortened URL endpoint
-router.delete('/api/urls/:shortCode', deleteUrl);
+router.delete('/api/urls/:shortCode', optionalAuth, deleteUrl);
 
 // Redirection lookup endpoint (placed at root level)
 router.get('/:shortCode', redirectToLongUrl);

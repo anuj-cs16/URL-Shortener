@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickLink — URL Analytics Details</title>
+  <meta name="description" content="View traffic performance, countries, and visitor systems details for a specific shortened link.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/analytics.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
+</head>
+<body>
+
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="navbar__container">
+      <a href="index.html" class="navbar__logo">
+        <span class="navbar__logo-icon">🔗</span> QuickLink
+      </a>
+      
+      <div class="navbar__auth">
+        <div class="user-menu">
+          <span id="nav-username" class="user-menu__name">👤 User</span>
+          <a href="analytics.html" class="btn btn--outline btn--sm" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 34px;">📊 Dashboard</a>
+          <button id="nav-logout-btn" class="btn btn--outline btn--sm" style="border-color: rgba(255,82,82,0.3); color: var(--error-color);">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrapper" id="main-content" style="max-width: 1200px;">
+    
+    <!-- Title Section -->
+    <section class="dashboard-header" style="margin-bottom: 30px;">
+      <a href="analytics.html" class="btn btn--text" style="display: inline-flex; align-items: center; gap: 6px; padding: 0; margin: 0 0 15px 0; text-decoration: none; font-weight: 600;">← Back to Analytics Dashboard</a>
+      <h1 class="hero__title" style="text-align: left; font-size: 2.2rem; margin: 0;" id="url-title-header">🔗 Link Performance</h1>
+      <p class="hero__subtitle" style="text-align: left; font-size: 0.95rem; margin: 5px 0 0 0;">Granular insights for the selected shortened URL code.</p>
+    </section>
+
+    <!-- URL Info Card -->
+    <section style="margin-bottom: 30px;">
+      <div class="glass-card" style="padding: 24px;">
+        <h2 class="chart-title" style="margin-bottom: 15px;">Link Details</h2>
+        <div class="settings-grid" style="grid-template-columns: 3fr 1fr; gap: 20px; align-items: center;">
+          <div class="url-details-info" style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <span class="dashboard-card__label" style="font-size: 0.75rem;">Short URL</span>
+              <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                <a href="#" id="info-short-url" target="_blank" class="history-table__short-url" style="font-size: 1.2rem; font-weight: 700;">Loading...</a>
+                <button id="info-copy-btn" class="btn btn--outline btn--sm" style="height: 30px; padding: 0 12px; font-size: 0.75rem;">📋 Copy</button>
+              </div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+              <span class="dashboard-card__label" style="font-size: 0.75rem;">Destination URL</span>
+              <div id="info-long-url" style="color: var(--text-primary); font-size: 0.95rem; margin-top: 4px; word-break: break-all; font-family: 'JetBrains Mono', monospace;" class="skeleton-text">Loading original link destination...</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+              <div>
+                <span class="dashboard-card__label" style="font-size: 0.75rem;">Created Date</span>
+                <div id="info-created-at" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">—</div>
+              </div>
+              <div>
+                <span class="dashboard-card__label" style="font-size: 0.75rem;">Expiration Date</span>
+                <div id="info-expires-at" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding: 20px; text-align: center; background: rgba(108, 99, 255, 0.08); border-color: rgba(108, 99, 255, 0.3);">
+            <div class="stat-number" id="info-total-clicks" style="font-size: 3rem;">0</div>
+            <div class="stat-label" style="margin-top: 2px;">Total Clicks</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clicks Over Time Full Width -->
+    <section class="chart-grid" style="grid-template-columns: 1fr;">
+      <div class="glass-card chart-card full-width">
+        <h2 class="chart-title">Clicks Over Time</h2>
+        <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+          <canvas id="url-clicks-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Devices and Browsers side-by-side -->
+    <section class="chart-grid">
+      <div class="glass-card chart-card">
+        <h2 class="chart-title">Device Breakdown</h2>
+        <div class="chart-container" style="position: relative; height: 260px; display: flex; justify-content: center; align-items: center;">
+          <canvas id="url-device-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass-card chart-card">
+        <h2 class="chart-title">Browser Breakdown</h2>
+        <div class="chart-container" style="position: relative; height: 260px; display: flex; justify-content: center; align-items: center;">
+          <canvas id="url-browser-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Country breakdown and Recent Clicks logs -->
+    <section class="chart-grid">
+      <!-- Country List Map Progress Bar -->
+      <div class="glass-card chart-card">
+        <h2 class="chart-title">Country Breakdown</h2>
+        <div id="country-progress-container" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 5px;">
+          <!-- Dynamically populated progress bars -->
+        </div>
+        <div id="country-empty" class="history-empty" style="display: none; padding: 40px;">
+          <span class="history-empty__icon">🌍</span>
+          <p class="history-empty__text">No location data captured yet.</p>
+        </div>
+      </div>
+
+      <!-- Referrer breaking card -->
+      <div class="glass-card chart-card">
+        <h2 class="chart-title">Traffic Referrers</h2>
+        <div class="chart-container" style="position: relative; height: 260px; display: flex; justify-content: center; align-items: center;">
+          <canvas id="url-referrer-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent click logs table -->
+    <section style="margin-bottom: 30px;">
+      <h2 class="history-section__title" style="text-align: left; font-size: 1.3rem;">⚡ Recent Clicks (Last 10 clicks)</h2>
+      <div class="glass-card history-card" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 180px;">Time</th>
+                <th scope="col" style="width: 150px;">IP Address</th>
+                <th scope="col">Location</th>
+                <th scope="col" style="width: 120px;">Device</th>
+                <th scope="col" style="width: 180px;">Browser</th>
+                <th scope="col" style="width: 150px;">Referrer</th>
+              </tr>
+            </thead>
+            <tbody id="url-recent-clicks-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <div id="url-recent-clicks-empty" class="history-empty" style="display: none; padding: 40px;">
+          <span class="history-empty__icon">📊</span>
+          <p class="history-empty__text">No clicks recorded yet. Share your short URL to start tracking click events!</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer__text">© 2026 QuickLink · Built with ❤️ on Google Antigravity</p>
+  </footer>
+
+  <!-- Toast Wrapper -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Javascript Scripts -->
+  <script src="js/url-analytics.js"></script>
+</body>
+</html>
