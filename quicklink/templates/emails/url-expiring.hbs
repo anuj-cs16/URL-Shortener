@@ -1,0 +1,28 @@
+<h1>⚠️ Short Link Expiring Soon</h1>
+<p>Hello {{name}},</p>
+<p>This is a friendly reminder that one of your shortened URLs will expire in <span class="highlight">{{hoursLeft}} hours</span>.</p>
+
+<p>Expiring short link:</p>
+<div class="url-box">
+  {{shortUrl}}
+</div>
+
+<p style="font-size: 14px; margin-top: 4px; color: #6E6E80;">
+  Original URL: <a href="{{longUrl}}" style="color: #6E6E80; word-break: break-all;">{{longUrl}}</a>
+</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+  <tr style="border-bottom: 1px solid #2A2A3E;">
+    <td style="padding: 10px 0; color: #A0A0B0; font-weight: bold; width: 140px;">Expiry Time:</td>
+    <td style="padding: 10px 0; color: #FFFFFF;">{{expiresAt}}</td>
+  </tr>
+</table>
+
+<div class="stat-box" style="border-left-color: #FF5252; background: rgba(255, 82, 82, 0.05); color: #FF5252; font-size: 14px;">
+  💡 Once expired, visitors clicking this short link will see a "Link Expired" warning page and will not be redirected. Short links cannot be renewed or extended.
+</div>
+
+<div style="text-align: center; margin-top: 30px; display: flex; gap: 10px; justify-content: center;">
+  <a href="{{appUrl}}" class="btn" style="margin: 0;">Create New Link 🔗</a>
+  <a href="{{appUrl}}/analytics/{{shortCode}}" class="btn" style="margin: 0; background: transparent; border: 1px solid #6C63FF; color: #6C63FF;">View Analytics 📊</a>
+</div>

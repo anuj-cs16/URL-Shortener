@@ -6,13 +6,20 @@
 
 'use strict';
 
+const path = require('path');
+
 /**
  * Middleware to catch unmatched routes and raise a 404 error.
+ * Serves HTML 404 page for browser requests, JSON for API clients.
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
  * @param {Function} next - Express next function.
  */
 const notFound = (req, res, next) => {
+  const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
+  if (acceptsHtml) {
+    return res.status(404).sendFile(path.join(__dirname, '..', 'public', '404.html'));
+  }
   const error = new Error(`Not Found - ${req.originalUrl}`);
   error.statusCode = 404;
   next(error);

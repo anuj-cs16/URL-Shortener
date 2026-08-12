@@ -33,10 +33,10 @@ This table summarizes the high-level roadmap for the QuickLink implementation.
 
 | Phase | Name | Focus Area | Duration | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Phase 1** | 🛠️ Setup & Configuration | Dev environment initialization, directory structure, db config | Day 1 | 🔵 Not Started |
-| **Phase 2** | ⚙️ Backend Development | Schema validation, REST API, controllers, and services | Days 2–3 | 🔵 Not Started |
-| **Phase 3** | 🎨 Frontend Development | Interface construction, CSS styling, responsive layout | Days 3–4 | 🔵 Not Started |
-| **Phase 4** | 🧪 Integration & Testing | E2E flow validation, QA tests, unit/integration testing, bug fixes | Day 5 | 🔵 Not Started |
+| **Phase 1** | 🛠️ Setup & Configuration | Dev environment initialization, directory structure, db config | Day 1 | 🟢 Complete |
+| **Phase 2** | ⚙️ Backend Development | Schema validation, REST API, controllers, and services | Days 2–3 | 🟢 Complete |
+| **Phase 3** | 🎨 Frontend Development | Interface construction, CSS styling, responsive layout | Days 3–4 | 🟢 Complete |
+| **Phase 4** | 🧪 Integration & Testing | E2E flow validation, QA tests, unit/integration testing, bug fixes | Day 5 | 🟢 Complete |
 | **Phase 5** | 🚀 Deployment & Launch | Cloud Run containerization, production configs, monitoring, handoff | Day 6 | 🔵 Not Started |
 
 *Status Indicators: 🔵 Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked*
@@ -48,49 +48,49 @@ This table summarizes the high-level roadmap for the QuickLink implementation.
 Follow this checklist sequentially to complete the implementation of the project.
 
 ### 🔷 Phase 1: Setup & Configuration (Day 1)
-- [ ] **Task 1.1:** Verify Google Antigravity installation and configure global workspaces.
-- [ ] **Task 1.2:** Initialize Git repository in the local workspace directory.
-- [ ] **Task 1.3:** Initialize Node.js application (`npm init -y`) and update `package.json` configurations.
-- [ ] **Task 1.4:** Install required dependencies (`express`, `mongoose`, `helmet`, `cors`, `express-rate-limit`, `qrcode`, `dotenv`, `morgan`).
-- [ ] **Task 1.5:** Create standard project files (`.gitignore`, `.env.example`, `.env`, `README.md`).
-- [ ] **Task 1.6:** Setup directory structure (`config/`, `models/`, `routes/`, `controllers/`, `middleware/`, `utils/`, `services/`, `public/`, `tests/`).
-- [ ] **Task 1.7:** Create a MongoDB Atlas cluster and acquire a connection string.
-- [ ] **Task 1.8:** Write base connection logic in `config/db.js` and validate environment variables in `config/env.js`.
-- [ ] **Task 1.9:** Write simple entry server in `server.js` and test if the local server starts without crashing.
+- [x] **Task 1.1:** Verify Google Antigravity installation and configure global workspaces.
+- [x] **Task 1.2:** Initialize Git repository in the local workspace directory.
+- [x] **Task 1.3:** Initialize Node.js application (`npm init -y`) and update `package.json` configurations.
+- [x] **Task 1.4:** Install required dependencies (`express`, `mongoose`, `helmet`, `cors`, `express-rate-limit`, `qrcode`, `dotenv`, `morgan`).
+- [x] **Task 1.5:** Create standard project files (`.gitignore`, `.env.example`, `.env`, `README.md`).
+- [x] **Task 1.6:** Setup directory structure (`config/`, `models/`, `routes/`, `controllers/`, `middleware/`, `utils/`, `services/`, `public/`, `tests/`).
+- [x] **Task 1.7:** Create a MongoDB Atlas cluster and acquire a connection string.
+- [x] **Task 1.8:** Write base connection logic in `config/db.js` and validate environment variables in `config/env.js`.
+- [x] **Task 1.9:** Write simple entry server in `server.js` and test if the local server starts without crashing.
 
 ### 🔷 Phase 2: Backend Development (Days 2–3)
-- [ ] **Task 2.1:** Implement the Mongoose schema for `Url` collection in `models/Url.js` with all 5 required indexes.
-- [ ] **Task 2.2:** Build the utility modules for short code generation (`utils/generateCode.js`) and URL validation (`utils/validateUrl.js`).
-- [ ] **Task 2.3:** Write the core business logic layer in `services/urlService.js` to handle creation and lookup operations.
-- [ ] **Task 2.4:** Implement route handlers in `controllers/urlController.js` and map endpoints in `routes/urlRoutes.js`.
-- [ ] **Task 2.5:** Create the redirect controller in `controllers/redirectController.js` and route pattern in `routes/redirectRoutes.js`.
-- [ ] **Task 2.6:** Write request validation middleware (`middleware/validator.js`) to sanitize and check URL and custom code parameters.
-- [ ] **Task 2.7:** Implement rate limiting rules using `express-rate-limit` inside `middleware/rateLimiter.js`.
-- [ ] **Task 2.8:** Build global exception catcher (`middleware/errorHandler.js`) and resource fallback handler (`middleware/notFound.js`).
-- [ ] **Task 2.9:** Implement click-counting logic directly inside redirect operations using atomic MongoDB updates.
-- [ ] **Task 2.10:** Test server and mock calls manually to verify `/api/health` and other core routes respond in expected formats.
+- [x] **Task 2.1:** Implement the Mongoose schema for `Url` collection in `models/Url.js` with all 5 required indexes.
+- [x] **Task 2.2:** Build the utility modules for short code generation (`utils/generateCode.js`) and URL validation (`utils/validateUrl.js`).
+- [x] **Task 2.3:** Write the core business logic layer in `services/urlService.js` to handle creation and lookup operations.
+- [x] **Task 2.4:** Implement route handlers in `controllers/urlController.js` and map endpoints in `routes/urlRoutes.js`.
+- [x] **Task 2.5:** Create the redirect controller in `controllers/redirectController.js` and route pattern in `routes/redirectRoutes.js`.
+- [x] **Task 2.6:** Write request validation middleware (`middleware/validator.js`) to sanitize and check URL and custom code parameters.
+- [x] **Task 2.7:** Implement rate limiting rules using `express-rate-limit` inside `middleware/rateLimiter.js`.
+- [x] **Task 2.8:** Build global exception catcher (`middleware/errorHandler.js`) and resource fallback handler (`middleware/notFound.js`).
+- [x] **Task 2.9:** Implement click-counting logic directly inside redirect operations using atomic MongoDB updates.
+- [x] **Task 2.10:** Test server and mock calls manually to verify `/api/health` and other core routes respond in expected formats.
 
 ### 🔷 Phase 3: Frontend Development (Days 3–4)
-- [ ] **Task 3.1:** Create semantic HTML pages in the `public/` directory (`index.html`, `dashboard.html`, `expired.html`, `404.html`).
-- [ ] **Task 3.2:** Build main stylesheets (`public/css/styles.css`, `public/css/dashboard.css`, `public/css/responsive.css`) using CSS variables.
-- [ ] **Task 3.3:** Design and implement the primary form component with state validations on the homepage.
-- [ ] **Task 3.4:** Create the result card container that slides down on successful creation.
-- [ ] **Task 3.5:** Write JS function to copy text using standard Clipboard API and update button states visually.
-- [ ] **Task 3.6:** Integrate client-side QR code generator (`qrcode.min.js`) and create download bindings.
-- [ ] **Task 3.7:** Build the session-based history table using `localStorage` to identify the browser owner.
-- [ ] **Task 3.8:** Build loading indicators, shake effects for invalid input fields, and toast alert boxes.
-- [ ] **Task 3.9:** Conduct CSS optimization to ensure components conform to media-query definitions across all device targets.
+- [x] **Task 3.1:** Create semantic HTML pages in the `public/` directory (`index.html`, `dashboard.html`, `expired.html`, `404.html`).
+- [x] **Task 3.2:** Build main stylesheets (`public/css/styles.css`, `public/css/dashboard.css`, `public/css/responsive.css`) using CSS variables.
+- [x] **Task 3.3:** Design and implement the primary form component with state validations on the homepage.
+- [x] **Task 3.4:** Create the result card container that slides down on successful creation.
+- [x] **Task 3.5:** Write JS function to copy text using standard Clipboard API and update button states visually.
+- [x] **Task 3.6:** Integrate client-side QR code generator (`qrcode.min.js`) and create download bindings.
+- [x] **Task 3.7:** Build the session-based history table using `localStorage` to identify the browser owner.
+- [x] **Task 3.8:** Build loading indicators, shake effects for invalid input fields, and toast alert boxes.
+- [x] **Task 3.9:** Conduct CSS optimization to ensure components conform to media-query definitions across all device targets.
 
 ### 🔷 Phase 4: Integration & Testing (Day 5)
-- [ ] **Task 4.1:** Establish a testing setup configuration inside `tests/setup.js`.
-- [ ] **Task 4.2:** Write unit test suites for utilities and service functions (`tests/unit/`).
-- [ ] **Task 4.3:** Build API integration tests using `supertest` covering success and failure logic (`tests/integration/`).
-- [ ] **Task 4.4:** Perform client-side E2E manual walkthroughs matching browser behaviors to requirements.
-- [ ] **Task 4.5:** Test responsiveness by rendering the application layouts under multiple viewport sizes.
-- [ ] **Task 4.6:** Validate expiration flows (artificially set expire times to past dates and confirm redirections fail with 410 codes).
-- [ ] **Task 4.7:** Test rate limit responses under high-concurrency requests.
-- [ ] **Task 4.8:** Fix bugs, resolve console issues, and re-run test suites to verify pass rate targets are met.
-- [ ] **Task 4.9:** Write the QA test report (`test_report.md`) with details on overall coverage and test outputs.
+- [x] **Task 4.1:** Establish a testing setup configuration inside `tests/setup.js`.
+- [x] **Task 4.2:** Write unit test suites for utilities and service functions (`tests/unit/`).
+- [x] **Task 4.3:** Build API integration tests using `supertest` covering success and failure logic (`tests/integration/`).
+- [x] **Task 4.4:** Perform client-side E2E manual walkthroughs matching browser behaviors to requirements.
+- [x] **Task 4.5:** Test responsiveness by rendering the application layouts under multiple viewport sizes.
+- [x] **Task 4.6:** Validate expiration flows (artificially set expire times to past dates and confirm redirections fail with 410 codes).
+- [x] **Task 4.7:** Test rate limit responses under high-concurrency requests.
+- [x] **Task 4.8:** Fix bugs, resolve console issues, and re-run test suites to verify pass rate targets are met.
+- [x] **Task 4.9:** Write the QA test report (`test_report.md`) with details on overall coverage and test outputs.
 
 ### 🔷 Phase 5: Deployment & Launch (Day 6)
 - [ ] **Task 5.1:** Create a production configuration and a secure multi-stage `Dockerfile` and `.dockerignore`.
@@ -110,9 +110,9 @@ Use this log to register, classify, and track any issue discovered during testin
 
 | Bug ID | Description | Severity | Target Phase | Status | Reported Date | Fixed Date |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BUG-001** | Redirection to original URL fails if URL contains hash fragment `#` | 🔴 Critical | Phase 4 | 🔵 Open | Aug 10, 2026 | — |
+| **BUG-001** | Redirection to original URL fails if URL contains hash fragment `#` | 🔴 Critical | Phase 4 | 🟢 Fixed | Aug 10, 2026 | Aug 12, 2026 |
 | **BUG-002** | Copy button label doesn't reset if clicked multiple times in quick succession | 🟡 High | Phase 3 | 🟢 Fixed | Aug 10, 2026 | Aug 10, 2026 |
-| **BUG-003** | Dashboard table columns overflow viewport boundary on 360px width screens | 🟠 Medium | Phase 3 | 🟡 Investigating | Aug 10, 2026 | — |
+| **BUG-003** | Dashboard table columns overflow viewport boundary on 360px width screens | 🟠 Medium | Phase 3 | 🟢 Fixed | Aug 10, 2026 | Aug 12, 2026 |
 
 *Severity Levels: 🔴 Critical (Blocks core flow) | 🟡 High (Degraded UX) | 🟠 Medium (Minor bug) | 🔵 Low (Trivial/Cosmetic)*  
 *Status Options: 🔵 Open | 🟡 Investigating | 🟢 Fixed | ⚪ Postponed*
@@ -125,15 +125,15 @@ Track the implementation status of all the requirements defined in the PRD docum
 
 | Feature ID | Feature Name | Priority | Status | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **F1** | Paste Long URL → Get Short URL | 🔴 Critical | 🔵 Not Started | Core redirection loop |
-| **F2** | Click Tracking & Count | 🔴 Critical | 🔵 Not Started | Atomic DB increments |
-| **F3** | Copy to Clipboard Button | 🟡 High | 🔵 Not Started | Modern Clipboard APIs |
-| **F4** | QR Code Generation | 🟡 High | 🔵 Not Started | Downloadable client-generated images |
-| **F5** | URL Expiry (7 Days) | 🟡 High | 🔵 Not Started | Managed by MongoDB TTL Index |
-| **F6** | User Dashboard | 🟡 High | 🔵 Not Started | Session-based history (local storage keys) |
-| **F7** | Custom Short Code Option | 🟢 Medium | 🔵 Not Started | Regex checks for unique custom aliases |
-| **F8** | URL Validation | 🔴 Critical | 🔵 Not Started | Format validation + server security checks |
-| **F9** | Mobile Responsive Design | 🔴 Critical | 🔵 Not Started | Responsive grids + card layouts on mobile |
+| **F1** | Paste Long URL → Get Short URL | 🔴 Critical | 🟢 Done | Core redirection loop |
+| **F2** | Click Tracking & Count | 🔴 Critical | 🟢 Done | Atomic DB increments |
+| **F3** | Copy to Clipboard Button | 🟡 High | 🟢 Done | Modern Clipboard APIs |
+| **F4** | QR Code Generation | 🟡 High | 🟢 Done | Downloadable client-generated images |
+| **F5** | URL Expiry (7 Days) | 🟡 High | 🟢 Done | Managed by MongoDB TTL Index |
+| **F6** | User Dashboard | 🟡 High | 🟢 Done | Session-based history (local storage keys) |
+| **F7** | Custom Short Code Option | 🟢 Medium | 🟢 Done | Regex checks for unique custom aliases |
+| **F8** | URL Validation | 🔴 Critical | 🟢 Done | Format validation + server security checks |
+| **F9** | Mobile Responsive Design | 🔴 Critical | 🟢 Done | Responsive grids + card layouts on mobile |
 
 *Status Options: 🔵 Not Started | 🟡 In Progress | 🟢 Done | 🔴 Blocked*
 

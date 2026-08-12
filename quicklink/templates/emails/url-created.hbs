@@ -1,0 +1,30 @@
+<h1>Your Short URL is Ready! 🎉</h1>
+<p>Hello {{name}},</p>
+<p>You have successfully shortened a URL. Here are your short link details:</p>
+
+<div class="url-box">
+  {{shortUrl}}
+</div>
+
+<p style="font-size: 14px; margin-top: 4px; color: #6E6E80;">
+  Original URL: <a href="{{longUrl}}" style="color: #6E6E80; word-break: break-all;">{{longUrl}}</a>
+</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+  <tr style="border-bottom: 1px solid #2A2A3E;">
+    <td style="padding: 10px 0; color: #A0A0B0; font-weight: bold; width: 140px;">Short Code:</td>
+    <td style="padding: 10px 0; color: #FFFFFF; font-family: monospace;">{{shortCode}}</td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 0; color: #A0A0B0; font-weight: bold;">Expires At:</td>
+    <td style="padding: 10px 0; color: #FFFFFF;">{{expiresAt}}</td>
+  </tr>
+</table>
+
+<div style="text-align: center;">
+  <a href="{{appUrl}}/analytics/{{shortCode}}" class="btn">View Link Analytics 📊</a>
+</div>
+
+<p style="font-size: 14px; color: #606070;">
+  Note: This short link will automatically expire after 7 days (on {{expiresAt}}).
+</p>

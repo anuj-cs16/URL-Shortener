@@ -1,0 +1,74 @@
+<h1>Weekly Analytics Report 📊</h1>
+<p>Hello {{name}},</p>
+<p>Here is your weekly performance summary for the week of <strong>{{weekStart}}</strong> to <strong>{{weekEnd}}</strong>.</p>
+
+<div class="divider"></div>
+
+<h2 style="font-size: 18px; margin-bottom: 16px; color: #FFFFFF;">Performance Overview</h2>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  <tr>
+    <td style="width: 50%; padding: 8px;">
+      <div class="stat-box">
+        <p class="stat-number">{{totalUrls}}</p>
+        <p class="stat-label">Total Links Managed</p>
+      </div>
+    </td>
+    <td style="width: 50%; padding: 8px;">
+      <div class="stat-box" style="border-left-color: #3ECFCF;">
+        <p class="stat-number" style="color: #3ECFCF;">{{totalClicks}}</p>
+        <p class="stat-label">Total Accumulated Clicks</p>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px;">
+      <div class="stat-box" style="border-left-color: #4CAF50;">
+        <p class="stat-number" style="color: #4CAF50;">+{{newUrlsThisWeek}}</p>
+        <p class="stat-label">New Links Created This Week</p>
+      </div>
+    </td>
+    <td style="padding: 8px;">
+      <div class="stat-box" style="border-left-color: #FFD93D;">
+        <p class="stat-number" style="color: #FFD93D;">+{{newClicksThisWeek}}</p>
+        <p class="stat-label">New Clicks This Week</p>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<div class="divider"></div>
+
+{{#if topUrl}}
+<h2 style="font-size: 18px; margin-bottom: 12px; color: #FFFFFF;">🔥 Top Performing Link</h2>
+<p>Your most clicked link this week was:</p>
+<div class="url-box" style="margin-bottom: 8px;">
+  {{topUrl}}
+</div>
+<p style="color: #A0A0B0; font-size: 14px; margin-top: 0;">
+  Generated <span class="highlight">{{topUrlClicks}} clicks</span> this week.
+</p>
+<div class="divider"></div>
+{{/if}}
+
+<h2 style="font-size: 18px; margin-bottom: 16px; color: #FFFFFF;">Audience Insights</h2>
+<ul class="bullet-list">
+  {{#if topCountry}}
+  <li><strong>Top Location:</strong> Most of your clicks came from <span class="highlight">{{topCountry}}</span>.</li>
+  {{/if}}
+  {{#if deviceBreakdown}}
+  <li><strong>Device Breakdown:</strong> Your traffic is distributed as:
+    <ul style="margin-top: 4px; padding-left: 15px; list-style-type: circle;">
+      {{#each deviceBreakdown}}
+      <li>{{@key}}: <strong>{{this}}%</strong></li>
+      {{/each}}
+    </ul>
+  </li>
+  {{/if}}
+</ul>
+
+<div style="text-align: center; margin-top: 30px;">
+  <a href="{{appUrl}}/analytics" class="btn">View Full Analytics Dashboard 📈</a>
+</div>
+
+<p>See you next week!</p>
+<p>Best regards,<br>The QuickLink Team</p>

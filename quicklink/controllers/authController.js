@@ -10,6 +10,10 @@
 
 const User = require('../models/User');
 const Url = require('../models/Url');
+const EmailSettings = require('../models/EmailSettings');
+const Notification = require('../models/Notification');
+const emailService = require('../utils/emailService');
+const { getClientIP, getLocationInfo, getBrowserInfo, getDeviceType } = require('../utils/analyticsHelper');
 
 /**
  * Helper: Generates JWT token, sets cookie options, and returns standard success response.
@@ -82,6 +86,24 @@ const register = async (req, res, next) => {
       password,
     });
 
+    // Create default EmailSettings for user
+    await EmailSettings.create({ userId: user._id });
+
+    // Send Welcome Email asynchronously (do not await)
+    emailService.sendWelcomeEmail(user).then(async (emailSent) => {
+      // Create Welcome Notification in database
+      await Notification.create({
+        userId: user._id,
+        type: 'welcome',
+        title: 'Welcome to QuickLink! 👋',
+        message: 'Your account has been created successfully. Welcome aboard!',
+        isEmailSent: emailSent,
+        emailSentAt: emailSent ? new Date() : null,
+      });
+    }).catch(err => {
+      console.error(`Welcome email background dispatch failed: ${err.message}`);
+    });
+
     sendTokenResponse(user, 201, 'Account created successfully', res);
   } catch (error) {
     next(error);
@@ -125,6 +147,35 @@ const login = async (req, res, next) => {
     // Update login timestamp
     user.lastLoginAt = new Date();
     await user.save();
+
+    // Trigger Login Security Alert asynchronously (do not await)
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = getClientIP(req);
+    const location = getLocationInfo(ip);
+    const browser = getBrowserInfo(userAgent);
+    const device = getDeviceType(userAgent);
+
+    const loginData = {
+      ipAddress: ip,
+      country: location.country || 'Unknown',
+      browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
+      deviceType: device || 'desktop',
+    };
+
+    emailService.sendLoginAlertEmail(user, loginData).then(async (emailSent) => {
+      // Create Database Notification
+      await Notification.create({
+        userId: user._id,
+        type: 'login_alert',
+        title: 'New Login Detected 🔔',
+        message: `New login from ${loginData.browser} on a ${loginData.deviceType} (${loginData.country}, IP: ${loginData.ipAddress}).`,
+        isEmailSent: emailSent,
+        emailSentAt: emailSent ? new Date() : null,
+        metadata: loginData,
+      });
+    }).catch(err => {
+      console.error(`Login alert background dispatch failed: ${err.message}`);
+    });
 
     sendTokenResponse(user, 200, 'Login successful', res);
   } catch (error) {
@@ -276,6 +327,23 @@ const changePassword = async (req, res, next) => {
     // Update password (triggers pre-save hashing hook)
     user.password = newPassword;
     await user.save();
+
+    // Trigger Password Changed Alert asynchronously (do not await)
+    const ip = getClientIP(req);
+    emailService.sendPasswordChangedEmail(user, ip).then(async (emailSent) => {
+      // Create Database Notification
+      await Notification.create({
+        userId: user._id,
+        type: 'password_changed',
+        title: 'Password Changed Successfully 🔐',
+        message: `Your account password was updated successfully from IP address ${ip}.`,
+        isEmailSent: emailSent,
+        emailSentAt: emailSent ? new Date() : null,
+        metadata: { ipAddress: ip },
+      });
+    }).catch(err => {
+      console.error(`Password change email background dispatch failed: ${err.message}`);
+    });
 
     sendTokenResponse(user, 200, 'Password updated successfully', res);
   } catch (error) {

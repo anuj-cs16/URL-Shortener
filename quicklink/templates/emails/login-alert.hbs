@@ -1,0 +1,42 @@
+<h1>🔔 New Login Detected</h1>
+<p>Hello {{name}},</p>
+<p>We detected a new login to your QuickLink account. Please verify the connection details below:</p>
+
+<div class="stat-box" style="border-left-color: #3ECFCF;">
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr style="border-bottom: 1px solid rgba(42, 42, 62, 0.4);">
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold; width: 120px;">Time:</td>
+      <td style="padding: 8px 0; color: #FFFFFF;">{{loginTime}}</td>
+    </tr>
+    <tr style="border-bottom: 1px solid rgba(42, 42, 62, 0.4);">
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold;">IP Address:</td>
+      <td style="padding: 8px 0; color: #FFFFFF; font-family: monospace;">{{ipAddress}}</td>
+    </tr>
+    <tr style="border-bottom: 1px solid rgba(42, 42, 62, 0.4);">
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold;">Location:</td>
+      <td style="padding: 8px 0; color: #FFFFFF;">{{country}}</td>
+    </tr>
+    <tr style="border-bottom: 1px solid rgba(42, 42, 62, 0.4);">
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold;">Browser:</td>
+      <td style="padding: 8px 0; color: #FFFFFF;">{{browser}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold;">Device:</td>
+      <td style="padding: 8px 0; color: #FFFFFF; text-transform: capitalize;">{{device}}</td>
+    </tr>
+  </table>
+</div>
+
+<h2 style="font-size: 16px; margin-top: 24px; color: #FFFFFF;">Was this you?</h2>
+<p>
+  If this was you, you can safely ignore this email.
+</p>
+<p style="color: #FF5252; font-weight: bold;">
+  If you do NOT recognize this activity, your account may be compromised. Please reset your password immediately to protect your links and profile.
+</p>
+
+<div style="text-align: center; margin-top: 30px;">
+  <a href="{{appUrl}}" class="btn" style="background-color: #FF5252;">Reset Password & Secure Account 🔐</a>
+</div>
+
+<p>Best regards,<br>The QuickLink Security Team</p>

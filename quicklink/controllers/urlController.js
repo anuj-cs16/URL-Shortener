@@ -9,9 +9,13 @@
 
 'use strict';
 
+const path = require('path');
 const QRCode = require('qrcode');
 const Url = require('../models/Url');
 const Click = require('../models/Click');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
+const emailService = require('../utils/emailService');
 const generateShortCode = require('../utils/generateShortCode');
 const {
   getClientIP,
@@ -79,6 +83,29 @@ const createShortUrl = async (req, res, next) => {
     // Construct full short URL and generate QR code
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
     const shortUrl = `${baseUrl}/${shortCode}`;
+
+    // Send URL Creation Email and Notification in background (do not await)
+    if (req.user) {
+      const fullUrlData = {
+        longUrl: newUrl.longUrl,
+        shortUrl,
+        shortCode,
+        expiresAt: newUrl.expiresAt,
+      };
+      emailService.sendUrlCreatedEmail(req.user, fullUrlData).then(async (emailSent) => {
+        await Notification.create({
+          userId: req.user._id,
+          type: 'url_created',
+          title: 'Short Link Created 🔗',
+          message: `Your link for code ${shortCode} was created successfully.`,
+          isEmailSent: emailSent,
+          emailSentAt: emailSent ? new Date() : null,
+          metadata: { shortCode, longUrl: newUrl.longUrl },
+        });
+      }).catch(err => {
+        console.error(`URL created notification dispatch failed: ${err.message}`);
+      });
+    }
     const qrCodeDataUrl = await QRCode.toDataURL(shortUrl);
 
     res.status(201).json({
@@ -110,9 +137,13 @@ const createShortUrl = async (req, res, next) => {
 const redirectToLongUrl = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
+    const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
 
     const url = await Url.findOne({ shortCode });
     if (!url || !url.isActive) {
+      if (acceptsHtml) {
+        return next();
+      }
       return res.status(404).json({
         success: false,
         message: 'Short URL not found',
@@ -121,6 +152,9 @@ const redirectToLongUrl = async (req, res, next) => {
 
     // Check if the URL has expired
     if (url.isExpired()) {
+      if (acceptsHtml) {
+        return res.status(410).sendFile(path.join(__dirname, '..', 'public', 'expired.html'));
+      }
       return res.status(410).json({
         success: false,
         message: 'This short URL has expired',
@@ -159,6 +193,40 @@ const redirectToLongUrl = async (req, res, next) => {
     url.clicks += 1;
     url.lastClickedAt = new Date();
     await url.save();
+
+    // Check click milestones in background (do not await)
+    if (url.userId) {
+      const milestones = [10, 50, 100, 500, 1000, 5000];
+      const reachedMilestone = milestones.find((m) => url.clicks === m && !url.milestonesReached.includes(m));
+      if (reachedMilestone) {
+        User.findById(url.userId).then((user) => {
+          if (user) {
+            emailService.sendClickMilestoneEmail(user, url, reachedMilestone).then(async (emailSent) => {
+              await Notification.create({
+                userId: user._id,
+                type: 'click_milestone',
+                title: 'Popularity Milestone Reached! 🎉',
+                message: `Your link for code ${url.shortCode} reached ${reachedMilestone} clicks!`,
+                isEmailSent: emailSent,
+                emailSentAt: emailSent ? new Date() : null,
+                metadata: {
+                  shortCode: url.shortCode,
+                  clicks: url.clicks,
+                  milestone: reachedMilestone,
+                },
+              });
+            }).catch(err => {
+              console.error(`Milestone notification dispatch failed: ${err.message}`);
+            });
+          }
+        }).catch(err => {
+          console.error(`User fetch for milestone warning failed: ${err.message}`);
+        });
+
+        url.milestonesReached.push(reachedMilestone);
+        await url.save();
+      }
+    }
 
     // Perform permanent redirect (301)
     res.redirect(301, url.longUrl);
@@ -299,10 +367,52 @@ const deleteUrl = async (req, res, next) => {
   }
 };
 
+/**
+ * Generates a QR code data URL for a given short code.
+ * @route   GET /api/urls/:shortCode/qr
+ * @param   {Object} req - Express request object.
+ * @param   {Object} res - Express response object.
+ * @param   {Function} next - Express next function.
+ * @returns {Promise<void>}
+ */
+const getQrCode = async (req, res, next) => {
+  try {
+    const { shortCode } = req.params;
+
+    const url = await Url.findOne({ shortCode });
+    if (!url) {
+      return res.status(404).json({
+        success: false,
+        message: 'Short URL not found',
+      });
+    }
+
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const shortUrl = `${baseUrl}/${url.shortCode}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        shortUrl,
+        shortCode: url.shortCode,
+        qrCode: qrCodeDataUrl,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createShortUrl,
   redirectToLongUrl,
   getAllUrls,
   getUrlStats,
   deleteUrl,
+  getQrCode,
 };

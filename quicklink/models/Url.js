@@ -50,10 +50,21 @@ const urlSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  expireWarningSent: {
+    type: Boolean,
+    default: false,
+  },
+  milestonesReached: {
+    type: [Number],
+    default: [],
+  },
 });
 
 // Add index on createdAt
 urlSchema.index({ createdAt: -1 });
+
+// TTL index: MongoDB automatically deletes documents when expiresAt is reached
+urlSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 /**
  * Checks if the shortened URL has expired.

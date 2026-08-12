@@ -27,6 +27,12 @@ const connectDB = async () => {
   if (process.env.NODE_ENV !== 'test' || process.env.MONGO_URI) {
     const connect = require('./config/database');
     await connect();
+
+    // Initialize email service and cron schedules after DB is ready
+    const { verifyEmailConnection } = require('./utils/emailService');
+    const { initScheduledJobs } = require('./utils/scheduledJobs');
+    verifyEmailConnection();
+    initScheduledJobs();
   }
 };
 
@@ -36,6 +42,7 @@ connectDB();
 const urlRoutes = require('./routes/urlRoutes');
 const authRoutes = require('./routes/authRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -79,7 +86,21 @@ app.get('/api/health', (req, res) => {
 // Mount router endpoints
 app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/', urlRoutes);
+
+// Serve compiled React app in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+  
+  app.get('*', (req, res, next) => {
+    // API endpoints should fall through to the notFound handler
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
+  });
+}
 
 // Fallback handlers for unmatched requests and uncaught errors
 app.use(notFound);

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — QuickLink</title>
+  <meta name="description" content="Manage, track, and analyze all your shortened URLs from your QuickLink dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>">
+  <style>
+    /* Dashboard-specific styles */
+    .dashboard-hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .dashboard-hero__title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--secondary-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .dashboard-hero__subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stat-card__icon {
+      font-size: 1.8rem;
+      background-color: var(--primary-light);
+      padding: 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(108, 99, 255, 0.2);
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+
+    .stat-card__content { display: flex; flex-direction: column; }
+
+    .stat-card__label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .stat-card__value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar__search {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .toolbar__search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .toolbar__search-input {
+      width: 100%;
+      height: 42px;
+      padding: 8px 14px 8px 40px;
+      background-color: rgba(15, 15, 26, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-family: var(--font-family);
+      transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+    }
+
+    .toolbar__search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .toolbar__filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar__filter-btn {
+      height: 42px;
+      padding: 0 16px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-family: var(--font-family);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+    }
+
+    .toolbar__filter-btn:hover,
+    .toolbar__filter-btn.active {
+      border-color: var(--primary-color);
+      background-color: var(--primary-light);
+      color: var(--text-primary);
+    }
+
+    /* URL Cards (for URLs table) */
+    .url-list { margin-bottom: 30px; }
+
+    .url-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      transition: transform 0.15s ease-out, border-color 0.15s ease-out;
+    }
+
+    .url-item:hover {
+      border-color: rgba(108, 99, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .url-item__main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .url-item__short {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--secondary-color);
+      text-decoration: none;
+      transition: color 0.15s ease-out;
+    }
+
+    .url-item__short:hover { color: var(--secondary-hover); }
+
+    .url-item__long {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .url-item__meta {
+      display: flex;
+      gap: 20px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .url-item__meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .url-item__meta-clicks {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .url-item__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .url-item__badge--active {
+      background: rgba(76, 175, 80, 0.15);
+      color: var(--success-color);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .url-item__badge--expired {
+      background: rgba(255, 82, 82, 0.1);
+      color: var(--error-color);
+      border: 1px solid rgba(255, 82, 82, 0.2);
+    }
+
+    .url-item__actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .url-item__action-btn {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.15s ease-out;
+    }
+
+    .url-item__action-btn:hover {
+      border-color: var(--primary-color);
+      background-color: var(--primary-light);
+      color: var(--text-primary);
+    }
+
+    .url-item__action-btn--delete:hover {
+      border-color: var(--error-color);
+      background-color: var(--error-bg);
+      color: var(--error-color);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-state__icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .empty-state__title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .empty-state__text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .loading-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .pagination__btn {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: var(--font-family);
+      font-weight: 600;
+      transition: all 0.15s ease-out;
+    }
+
+    .pagination__btn:hover,
+    .pagination__btn.active {
+      border-color: var(--primary-color);
+      background-color: var(--primary-light);
+      color: var(--text-primary);
+    }
+
+    .pagination__btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* QR Modal */
+    .qr-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .qr-modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      text-align: center;
+      max-width: 340px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      animation: scaleIn 0.25s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .qr-modal__title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .qr-modal__image-wrap {
+      background: white;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      margin-bottom: 16px;
+    }
+
+    .qr-modal__image {
+      width: 180px;
+      height: 180px;
+    }
+
+    .qr-modal__actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .qr-modal__actions .btn { flex: 1; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .toolbar__search { max-width: 100%; }
+
+      .url-item {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .url-item__actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row {
+        grid-template-columns: 1fr;
+      }
+
+      .url-item__meta {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Skip Link for Keyboard Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="navbar__container">
+      <a href="/" class="navbar__logo" id="nav-logo">
+        <span class="navbar__logo-icon">🔗</span> QuickLink
+      </a>
+      <div id="navbar-auth" class="navbar__auth">
+        <div id="nav-logged-out" class="nav-auth-buttons" style="display: none;">
+          <a href="/" class="btn btn--outline btn--sm" style="text-decoration: none;">← Back to Home</a>
+        </div>
+        <div id="nav-logged-in" class="user-menu" style="display: none;">
+          <span id="nav-username" class="user-menu__name"></span>
+          <a href="analytics.html" class="btn btn--outline btn--sm" style="margin-left: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 34px;">📊 Analytics</a>
+          <a href="/" class="btn btn--outline btn--sm" style="margin-left: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; height: 34px;">🔗 Shorten</a>
+          <button id="nav-logout-btn" class="btn btn--outline btn--sm" style="margin-left: 8px; border-color: rgba(255,82,82,0.3); color: var(--error-color);">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content" class="page-wrapper">
+
+    <!-- Page Header -->
+    <section class="dashboard-hero">
+      <h1 class="dashboard-hero__title">📊 Your Dashboard</h1>
+      <p class="dashboard-hero__subtitle">Manage and track all your shortened URLs</p>
+    </section>
+
+    <!-- Stats Overview -->
+    <div class="stats-row" id="stats-row">
+      <div class="glass-card stat-card">
+        <span class="stat-card__icon">🔗</span>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Total URLs</span>
+          <span class="stat-card__value" id="stat-total-urls">0</span>
+        </div>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-card__icon">👆</span>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Total Clicks</span>
+          <span class="stat-card__value" id="stat-total-clicks">0</span>
+        </div>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-card__icon">✅</span>
+        <div class="stat-card__content">
+          <span class="stat-card__label">Active</span>
+          <span class="stat-card__value" id="stat-active-urls">0</span>
+        </div>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-card__icon">📅</span>
+        <div class="stat-card__content">
+          <span class="stat-card__label">This Month</span>
+          <span class="stat-card__value" id="stat-month-urls">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar: Search & Filter -->
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="toolbar__search-icon">🔍</span>
+        <input type="text" id="search-input" class="toolbar__search-input" placeholder="Search URLs..." aria-label="Search URLs">
+      </div>
+      <div class="toolbar__filter">
+        <button class="toolbar__filter-btn active" data-filter="all" id="filter-all">All</button>
+        <button class="toolbar__filter-btn" data-filter="active" id="filter-active">Active</button>
+        <button class="toolbar__filter-btn" data-filter="expired" id="filter-expired">Expired</button>
+      </div>
+    </div>
+
+    <!-- URL List -->
+    <div id="url-list" class="url-list">
+      <!-- Loading state -->
+      <div id="loading-state" class="loading-overlay glass-card">
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p style="margin-top: 12px; font-size: 0.85rem;">Loading your URLs...</p>
+      </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div id="empty-state" class="glass-card empty-state" style="display: none;">
+      <span class="empty-state__icon">📭</span>
+      <h2 class="empty-state__title">No URLs Found</h2>
+      <p class="empty-state__text">You haven't shortened any URLs yet, or no results match your filter.</p>
+      <a href="/" class="btn btn--primary" style="width: auto; padding: 0 32px; display: inline-flex;">🔗 Shorten Your First URL</a>
+    </div>
+
+    <!-- Auth Required State (hidden by default) -->
+    <div id="auth-required" class="glass-card empty-state" style="display: none;">
+      <span class="empty-state__icon">🔒</span>
+      <h2 class="empty-state__title">Login Required</h2>
+      <p class="empty-state__text">Please log in to view your dashboard and manage your URLs.</p>
+      <a href="/" class="btn btn--primary" style="width: auto; padding: 0 32px; display: inline-flex;">← Go to Login</a>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination" style="display: none;"></div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer__text">© 2026 QuickLink · Built with ❤️ on Google Antigravity</p>
+  </footer>
+
+  <!-- QR Modal (hidden) -->
+  <div id="qr-modal-overlay" class="qr-modal-overlay" style="display: none;">
+    <div class="qr-modal">
+      <h3 class="qr-modal__title">📱 QR Code</h3>
+      <div class="qr-modal__image-wrap">
+        <img id="qr-modal-image" class="qr-modal__image" src="" alt="QR Code">
+      </div>
+      <p id="qr-modal-url" style="font-size: 0.8rem; color: var(--text-secondary); font-family: var(--font-mono); margin-bottom: 12px;"></p>
+      <div class="qr-modal__actions">
+        <a id="qr-download-btn" href="#" download="quicklink-qr.png" class="btn btn--primary" style="height: 42px; font-size: 0.85rem;">⬇️ Download</a>
+        <button id="qr-close-btn" class="btn btn--outline" style="height: 42px; font-size: 0.85rem;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Wrapper -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    'use strict';
+
+    // ── STATE ──
+    let allUrls = [];
+    let filteredUrls = [];
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 10;
+    const BASE_URL = window.location.origin;
+
+    // ── DOM ──
+    const urlListEl = document.getElementById('url-list');
+    const loadingState = document.getElementById('loading-state');
+    const emptyState = document.getElementById('empty-state');
+    const authRequired = document.getElementById('auth-required');
+    const paginationEl = document.getElementById('pagination');
+    const searchInput = document.getElementById('search-input');
+    const filterBtns = document.querySelectorAll('.toolbar__filter-btn');
+    const toastContainer = document.getElementById('toast-container');
+
+    // Stats
+    const statTotalUrls = document.getElementById('stat-total-urls');
+    const statTotalClicks = document.getElementById('stat-total-clicks');
+    const statActiveUrls = document.getElementById('stat-active-urls');
+    const statMonthUrls = document.getElementById('stat-month-urls');
+
+    // QR Modal
+    const qrOverlay = document.getElementById('qr-modal-overlay');
+    const qrImage = document.getElementById('qr-modal-image');
+    const qrUrl = document.getElementById('qr-modal-url');
+    const qrDownloadBtn = document.getElementById('qr-download-btn');
+    const qrCloseBtn = document.getElementById('qr-close-btn');
+
+    // Nav Auth
+    const navLoggedOut = document.getElementById('nav-logged-out');
+    const navLoggedIn = document.getElementById('nav-logged-in');
+    const navUsername = document.getElementById('nav-username');
+    const navLogoutBtn = document.getElementById('nav-logout-btn');
+
+    // ── TOAST ──
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast--${type}`;
+      toast.innerHTML = `
+        <span class="toast__content">${type === 'success' ? '✅' : '❌'} ${message}</span>
+        <button class="toast__close" onclick="this.parentElement.remove()">✕</button>
+      `;
+      toastContainer.appendChild(toast);
+      setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 400); }, 3500);
+    }
+
+    // ── AUTH CHECK ──
+    function getToken() {
+      // Try cookies first, then localStorage
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'token' && value) return value;
+      }
+      return localStorage.getItem('token');
+    }
+
+    function getAuthHeaders() {
+      const token = getToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
+    // ── INIT ──
+    async function init() {
+      const token = getToken();
+
+      if (!token) {
+        loadingState.style.display = 'none';
+        authRequired.style.display = '';
+        navLoggedOut.style.display = '';
+        return;
+      }
+
+      // Fetch user profile
+      try {
+        const meRes = await fetch('/api/auth/me', { headers: getAuthHeaders() });
+        const meData = await meRes.json();
+        if (meData.success) {
+          navLoggedIn.style.display = '';
+          navUsername.textContent = meData.data.user.name;
+        } else {
+          loadingState.style.display = 'none';
+          authRequired.style.display = '';
+          navLoggedOut.style.display = '';
+          return;
+        }
+      } catch (e) {
+        loadingState.style.display = 'none';
+        authRequired.style.display = '';
+        navLoggedOut.style.display = '';
+        return;
+      }
+
+      // Fetch URLs
+      await loadUrls();
+
+      // Fetch dashboard stats
+      await loadDashboardStats();
+    }
+
+    async function loadUrls() {
+      try {
+        const res = await fetch('/api/urls', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          allUrls = data.data || [];
+          applyFilters();
+        } else {
+          showToast('Failed to load URLs', 'error');
+        }
+      } catch (e) {
+        showToast('Network error loading URLs', 'error');
+      } finally {
+        loadingState.style.display = 'none';
+      }
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const res = await fetch('/api/analytics/dashboard', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          const d = data.data;
+          statTotalUrls.textContent = d.totalUrls || 0;
+          statTotalClicks.textContent = d.totalClicks || 0;
+          statActiveUrls.textContent = d.activeUrls || 0;
+          statMonthUrls.textContent = d.urlsThisMonth || 0;
+        }
+      } catch (e) {
+        // Silent fail for stats
+      }
+    }
+
+    // ── FILTERING & SEARCH ──
+    function applyFilters() {
+      filteredUrls = allUrls.filter(url => {
+        // Filter
+        if (currentFilter === 'active') {
+          if (url.isExpired) return false;
+        } else if (currentFilter === 'expired') {
+          if (!url.isExpired) return false;
+        }
+
+        // Search
+        if (currentSearch) {
+          const q = currentSearch.toLowerCase();
+          const matchLong = url.longUrl.toLowerCase().includes(q);
+          const matchShort = url.shortCode.toLowerCase().includes(q);
+          const matchCustom = url.customCode && url.customCode.toLowerCase().includes(q);
+          if (!matchLong && !matchShort && !matchCustom) return false;
+        }
+
+        return true;
+      });
+
+      currentPage = 1;
+      renderUrls();
+      renderPagination();
+    }
+
+    // ── RENDERING ──
+    function renderUrls() {
+      // Clear previous items (keep loading state intact if hidden)
+      const existingItems = urlListEl.querySelectorAll('.url-item');
+      existingItems.forEach(el => el.remove());
+
+      if (filteredUrls.length === 0) {
+        emptyState.style.display = '';
+        paginationEl.style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const pageUrls = filteredUrls.slice(start, end);
+
+      pageUrls.forEach(url => {
+        const item = document.createElement('div');
+        item.className = 'url-item';
+
+        const shortUrl = url.shortUrl || `${BASE_URL}/${url.shortCode}`;
+        const createdDate = new Date(url.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const isExpired = url.isExpired;
+
+        let expiresLabel = '';
+        if (isExpired) {
+          expiresLabel = '<span class="url-item__badge url-item__badge--expired">Expired</span>';
+        } else if (url.expiresAt) {
+          const remaining = Math.max(0, Math.ceil((new Date(url.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)));
+          expiresLabel = `<span class="url-item__badge url-item__badge--active">${remaining}d left</span>`;
+        }
+
+        item.innerHTML = `
+          <div class="url-item__main">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <a href="${shortUrl}" target="_blank" class="url-item__short">${shortUrl}</a>
+              ${expiresLabel}
+            </div>
+            <div class="url-item__long" title="${url.longUrl}">${url.longUrl}</div>
+            <div class="url-item__meta">
+              <span class="url-item__meta-item">👆 <span class="url-item__meta-clicks">${url.clicks}</span> clicks</span>
+              <span class="url-item__meta-item">📅 ${createdDate}</span>
+              ${url.customCode ? '<span class="url-item__meta-item">✨ Custom</span>' : ''}
+            </div>
+          </div>
+          <div class="url-item__actions">
+            <button class="url-item__action-btn" title="Copy short URL" onclick="copyUrl('${shortUrl}')">📋</button>
+            <button class="url-item__action-btn" title="Show QR Code" onclick="showQr('${shortUrl}', '${url.shortCode}')">📱</button>
+            <a href="url-analytics.html?code=${url.shortCode}" class="url-item__action-btn" title="View Analytics" style="text-decoration: none; color: inherit;">📊</a>
+            <button class="url-item__action-btn url-item__action-btn--delete" title="Delete URL" onclick="deleteUrl('${url.shortCode}')">🗑️</button>
+          </div>
+        `;
+
+        urlListEl.appendChild(item);
+      });
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredUrls.length / ITEMS_PER_PAGE);
+      paginationEl.innerHTML = '';
+
+      if (totalPages <= 1) {
+        paginationEl.style.display = 'none';
+        return;
+      }
+
+      paginationEl.style.display = 'flex';
+
+      // Previous
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'pagination__btn';
+      prevBtn.textContent = '←';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => { currentPage--; renderUrls(); renderPagination(); };
+      paginationEl.appendChild(prevBtn);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = `pagination__btn ${i === currentPage ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.onclick = () => { currentPage = i; renderUrls(); renderPagination(); };
+        paginationEl.appendChild(btn);
+      }
+
+      // Next
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'pagination__btn';
+      nextBtn.textContent = '→';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => { currentPage++; renderUrls(); renderPagination(); };
+      paginationEl.appendChild(nextBtn);
+    }
+
+    // ── ACTIONS ──
+    async function copyUrl(url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Copied to clipboard!');
+      } catch (e) {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('Copied to clipboard!');
+      }
+    }
+
+    async function showQr(shortUrl, shortCode) {
+      qrUrl.textContent = shortUrl;
+      try {
+        const res = await fetch(`/api/urls/${shortCode}/qr`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.success && data.data.qrCode) {
+          qrImage.src = data.data.qrCode;
+          qrDownloadBtn.href = data.data.qrCode;
+          qrDownloadBtn.download = `quicklink-${shortCode}.png`;
+          qrOverlay.style.display = 'flex';
+        } else {
+          showToast('Failed to generate QR code', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to generate QR code', 'error');
+      }
+    }
+
+    async function deleteUrl(shortCode) {
+      if (!confirm('Are you sure you want to delete this short URL?')) return;
+
+      try {
+        const res = await fetch(`/api/urls/${shortCode}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('URL deleted successfully');
+          allUrls = allUrls.filter(u => u.shortCode !== shortCode);
+          applyFilters();
+
+          // Update stats
+          await loadDashboardStats();
+        } else {
+          showToast(data.message || 'Failed to delete URL', 'error');
+        }
+      } catch (e) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    // ── EVENT LISTENERS ──
+    searchInput.addEventListener('input', (e) => {
+      currentSearch = e.target.value.trim();
+      applyFilters();
+    });
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    // QR Modal close
+    qrCloseBtn.addEventListener('click', () => { qrOverlay.style.display = 'none'; });
+    qrOverlay.addEventListener('click', (e) => {
+      if (e.target === qrOverlay) qrOverlay.style.display = 'none';
+    });
+
+    // Logout
+    if (navLogoutBtn) {
+      navLogoutBtn.addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
+        } catch (e) { /* silent */ }
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      });
+    }
+
+    // ── BOOT ──
+    init();
+  </script>
+</body>
+</html>

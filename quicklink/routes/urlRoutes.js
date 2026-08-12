@@ -19,6 +19,7 @@ const {
   getAllUrls,
   getUrlStats,
   deleteUrl,
+  getQrCode,
 } = require('../controllers/urlController');
 
 const validateUrl = require('../middleware/validateUrl');
@@ -33,6 +34,9 @@ router.get('/api/urls', optionalAuth, getAllUrls);
 
 // Retrieve click statistics for a short URL
 router.get('/api/urls/:shortCode', getUrlStats);
+
+// Generate QR code for a short URL
+router.get('/api/urls/:shortCode/qr', getQrCode);
 
 // Delete shortened URL endpoint
 router.delete('/api/urls/:shortCode', optionalAuth, deleteUrl);

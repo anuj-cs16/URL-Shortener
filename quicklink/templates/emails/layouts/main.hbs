@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickLink</title>
+  <style>
+    /* Email safe CSS */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0F0F1A;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .email-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .email-header {
+      background: linear-gradient(135deg, #6C63FF, #3ECFCF);
+      border-radius: 16px 16px 0 0;
+      padding: 30px;
+      text-align: center;
+    }
+    .logo-text {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+    }
+    .email-body {
+      background-color: #1A1A2E;
+      padding: 40px 30px;
+      border-radius: 0 0 16px 16px;
+    }
+    .email-footer {
+      text-align: center;
+      padding: 20px;
+      color: #606070;
+      font-size: 12px;
+    }
+    .btn {
+      display: inline-block;
+      background: #6C63FF;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    .stat-box {
+      background: #16213E;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+      border-left: 4px solid #6C63FF;
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #6C63FF;
+      margin: 0;
+    }
+    .stat-label {
+      color: #A0A0B0;
+      font-size: 14px;
+      margin: 4px 0 0 0;
+    }
+    h1, h2, h3 {
+      color: #FFFFFF;
+      margin-top: 0;
+    }
+    p {
+      color: #A0A0B0;
+      line-height: 1.6;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #2A2A3E;
+      margin: 24px 0;
+    }
+    .highlight {
+      color: #6C63FF;
+      font-weight: bold;
+    }
+    .url-box {
+      background: #16213E;
+      border: 1px solid #2A2A3E;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: monospace;
+      color: #3ECFCF;
+      word-break: break-all;
+      margin: 12px 0;
+    }
+    .bullet-list {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+    .bullet-list li {
+      color: #A0A0B0;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    
+    <div class="email-header">
+      <p class="logo-text">🔗 QuickLink</p>
+      <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">
+        Fast & Reliable URL Shortener
+      </p>
+    </div>
+
+    <div class="email-body">
+      {{{body}}}
+    </div>
+
+    <div class="email-footer">
+      <p>You are receiving this email because you have an account at QuickLink.</p>
+      <p>
+        <a href="{{appUrl}}/dashboard" style="color: #6C63FF; text-decoration: none;">Dashboard</a> · 
+        <a href="{{appUrl}}/settings/notifications" style="color: #6C63FF; text-decoration: none;">Unsubscribe</a>
+      </p>
+      <p>© 2026 QuickLink. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>

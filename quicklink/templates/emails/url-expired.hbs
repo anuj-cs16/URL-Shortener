@@ -1,0 +1,30 @@
+<h1>🕐 Short Link Expired</h1>
+<p>Hello {{name}},</p>
+<p>One of your shortened URLs has reached its 7-day expiration limit and is now inactive.</p>
+
+<p>Expired short code: <code class="highlight">{{shortCode}}</code></p>
+
+<p>Original long URL:</p>
+<div class="url-box" style="color: #6E6E80;">
+  {{longUrl}}
+</div>
+
+<h2 style="font-size: 16px; margin-top: 24px; color: #FFFFFF;">Final Performance Summary</h2>
+<table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+  <tr style="border-bottom: 1px solid #2A2A3E;">
+    <td style="padding: 10px 0; color: #A0A0B0; font-weight: bold; width: 140px;">Total Clicks Received:</td>
+    <td style="padding: 10px 0; color: #FFFFFF; font-weight: bold;">{{totalClicks}}</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #2A2A3E;">
+    <td style="padding: 10px 0; color: #A0A0B0; font-weight: bold;">Date Created:</td>
+    <td style="padding: 10px 0; color: #FFFFFF;">{{createdAt}}</td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin-top: 30px;">
+  <a href="{{appUrl}}" class="btn">Create a New Short Link 🔗</a>
+</div>
+
+<p style="font-size: 13px; color: #606070;">
+  Note: Visitors attempting to access this link will now receive a standard "This link has expired" notification page. The redirection records and statistics will remain archived on your dashboard history for your review.
+</p>
