@@ -70,8 +70,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Serve static assets from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static assets — React build in production, public/ in development
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+} else {
+  app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // Mount API health check endpoint
 app.get('/api/health', (req, res) => {
@@ -89,11 +93,9 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/', urlRoutes);
 
-// Serve compiled React app in production
+// Serve React SPA catch-all in production (after API routes)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  app.get('*', (req, res, next) => {
+  app.get('{*path}', (req, res, next) => {
     // API endpoints should fall through to the notFound handler
     if (req.path.startsWith('/api')) {
       return next();

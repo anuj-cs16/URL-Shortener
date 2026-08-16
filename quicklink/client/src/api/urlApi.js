@@ -26,8 +26,9 @@ export const createShortUrl = async (longUrl, customCode = '') => {
  * Fetches all URL documents created by the user (or session).
  * @returns {Promise<Array>} List of URL documents.
  */
-export const getAllUrls = async () => {
-  const response = await axiosInstance.get('/api/urls');
+export const getAllUrls = async (codes = []) => {
+  const params = codes.length > 0 ? { codes: codes.join(',') } : {};
+  const response = await axiosInstance.get('/api/urls', { params });
   return response.data;
 };
 

@@ -1,31 +1,52 @@
-# Use official Node.js image
-FROM node:18-alpine
+# ===========================
+# Stage 1: Build React Client
+# ===========================
+FROM node:20-alpine AS client-builder
 
-# Set working directory
+WORKDIR /app/client
+
+# Install client dependencies
+COPY client/package*.json ./
+RUN npm ci --production=false
+
+# Copy client source and build
+COPY client/ ./
+RUN npm run build
+
+# ===========================
+# Stage 2: Production Server
+# ===========================
+FROM node:20-alpine
+
 WORKDIR /app
 
-# Copy root package files
+# Install production dependencies only
 COPY package*.json ./
+RUN npm ci --production
 
-# Copy client package files
-COPY client/package*.json ./client/
+# Copy backend source files
+COPY server.js ./
+COPY config/ ./config/
+COPY controllers/ ./controllers/
+COPY middleware/ ./middleware/
+COPY models/ ./models/
+COPY routes/ ./routes/
+COPY utils/ ./utils/
+COPY templates/ ./templates/
+COPY public/ ./public/
 
-# Install dependencies for both backend and frontend build
-RUN npm install
-RUN cd client && npm install
+# Copy built React client from builder stage
+COPY --from=client-builder /app/client/build ./client/build
 
-# Copy all project files
-COPY . .
+# Set environment
+ENV NODE_ENV=production
 
-# Build the React production client
-RUN cd client && npm run build
-
-# Remove development dependencies and frontend sources to shrink container footprint
-RUN rm -rf client/node_modules client/src client/public
-RUN npm prune --production
-
-# Expose port
+# Expose port (Cloud Run uses PORT env var, default 8080)
 EXPOSE 8080
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+
 # Start command
-CMD [ "node", "server.js" ]
+CMD ["node", "server.js"]

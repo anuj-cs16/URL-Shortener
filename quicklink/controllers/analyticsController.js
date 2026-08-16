@@ -20,7 +20,21 @@ const Url = require('../models/Url');
  */
 const getDashboardStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const { codes } = req.query;
+    let query = { _id: { $in: [] } };
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      query = { userId: req.user._id };
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      query = { _id: { $in: urlIds } };
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
     const startOfMonth = moment().startOf('month').toDate();
 
     const [
@@ -33,14 +47,14 @@ const getDashboardStats = async (req, res, next) => {
       activeUrls,
       recentClicks,
     ] = await Promise.all([
-      Url.countDocuments({ userId }),
-      Click.countDocuments({ userId }),
-      Url.countDocuments({ userId, createdAt: { $gte: startOfMonth } }),
-      Click.countDocuments({ userId, clickedAt: { $gte: startOfMonth } }),
-      Url.findOne({ userId }).sort({ clicks: -1 }),
-      Url.findOne({ userId }).sort({ createdAt: -1 }),
-      Url.countDocuments({ userId, expiresAt: { $gt: new Date() } }),
-      Click.find({ userId }).sort({ clickedAt: -1 }).limit(20),
+      Url.countDocuments(query),
+      Click.countDocuments(clickQuery),
+      Url.countDocuments({ ...query, createdAt: { $gte: startOfMonth } }),
+      Click.countDocuments({ ...clickQuery, clickedAt: { $gte: startOfMonth } }),
+      Url.findOne(query).sort({ clicks: -1 }),
+      Url.findOne(query).sort({ createdAt: -1 }),
+      Url.countDocuments({ ...query, expiresAt: { $gt: new Date() } }),
+      Click.find(clickQuery).sort({ clickedAt: -1 }).limit(20),
     ]);
 
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
@@ -95,11 +109,22 @@ const getDashboardStats = async (req, res, next) => {
 const getClicksOverTime = async (req, res, next) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const userId = req.user._id;
+    const { codes } = req.query;
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
     const startDate = moment().subtract(days - 1, 'days').startOf('day');
 
     const clicks = await Click.find({
-      userId,
+      ...clickQuery,
       clickedAt: { $gte: startDate.toDate() },
     });
 
@@ -134,8 +159,19 @@ const getClicksOverTime = async (req, res, next) => {
  */
 const getDeviceStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const clicks = await Click.find({ userId });
+    const { codes } = req.query;
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
+    const clicks = await Click.find(clickQuery);
     const total = clicks.length;
 
     const counts = { desktop: 0, mobile: 0, tablet: 0, unknown: 0 };
@@ -171,8 +207,19 @@ const getDeviceStats = async (req, res, next) => {
  */
 const getBrowserStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const clicks = await Click.find({ userId });
+    const { codes } = req.query;
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
+    const clicks = await Click.find(clickQuery);
     const total = clicks.length;
 
     const browserCounts = {};
@@ -206,8 +253,19 @@ const getBrowserStats = async (req, res, next) => {
  */
 const getCountryStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const clicks = await Click.find({ userId });
+    const { codes } = req.query;
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
+    const clicks = await Click.find(clickQuery);
     const total = clicks.length;
 
     const countryCounts = {};
@@ -257,12 +315,6 @@ const getUrlAnalytics = async (req, res, next) => {
       });
     }
 
-    if (!url.userId || url.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only view analytics for your own URLs',
-      });
-    }
 
     const clicks = await Click.find({ urlId: url._id }).sort({ clickedAt: -1 });
     const total = clicks.length;
@@ -396,10 +448,18 @@ const getUrlAnalytics = async (req, res, next) => {
  */
 const getTopUrls = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const { codes } = req.query;
     const limit = parseInt(req.query.limit) || 5;
 
-    const urls = await Url.find({ userId }).sort({ clicks: -1 }).limit(limit);
+    let query = { _id: { $in: [] } };
+    if (req.user) {
+      query = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      query = { shortCode: { $in: codesArray } };
+    }
+
+    const urls = await Url.find(query).sort({ clicks: -1 }).limit(limit);
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
 
     const data = urls.map((url) => ({
@@ -426,8 +486,19 @@ const getTopUrls = async (req, res, next) => {
  */
 const getReferrerStats = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const clicks = await Click.find({ userId });
+    const { codes } = req.query;
+    let clickQuery = { urlId: { $in: [] } };
+
+    if (req.user) {
+      clickQuery = { userId: req.user._id };
+    } else if (codes) {
+      const codesArray = codes.split(',');
+      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urlIds = urls.map(u => u._id);
+      clickQuery = { urlId: { $in: urlIds } };
+    }
+
+    const clicks = await Click.find(clickQuery);
     const total = clicks.length;
 
     const referrerCounts = {};

@@ -23,10 +23,10 @@ const {
   getReferrerStats,
 } = require('../controllers/analyticsController');
 
-const { isAuthenticated } = require('../middleware/auth');
+const { optionalAuth } = require('../middleware/auth');
 
-// Require authentication session verification for all analytics routes
-router.use(isAuthenticated);
+// Allow optional user context identification for requests
+router.use(optionalAuth);
 
 router.get('/dashboard', getDashboardStats);
 router.get('/clicks-over-time', getClicksOverTime);

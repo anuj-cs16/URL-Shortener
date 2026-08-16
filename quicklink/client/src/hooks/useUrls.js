@@ -11,19 +11,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as urlApi from '../api/urlApi';
 import { toast } from 'react-hot-toast';
-import { useAuthContext } from '../context/AuthContext';
+
 
 export const useUrls = () => {
   const [urls, setUrls] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { isAuthenticated } = useAuthContext();
 
   const fetchUrls = useCallback(async () => {
+    const stored = localStorage.getItem('quicklink_codes');
+    const codes = stored ? JSON.parse(stored) : [];
+
+    if (codes.length === 0) {
+      setUrls([]);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const response = await urlApi.getAllUrls();
+      const response = await urlApi.getAllUrls(codes);
       if (response.success) {
         setUrls(response.data || []);
       } else {
@@ -36,14 +43,10 @@ export const useUrls = () => {
     }
   }, []);
 
-  // Fetch URLs automatically on mount if authenticated
+  // Fetch URLs automatically on mount
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUrls();
-    } else {
-      setUrls([]);
-    }
-  }, [isAuthenticated, fetchUrls]);
+    fetchUrls();
+  }, [fetchUrls]);
 
   const shorten = async (longUrl, customCode = '') => {
     setIsLoading(true);
@@ -52,10 +55,17 @@ export const useUrls = () => {
       const response = await urlApi.createShortUrl(longUrl, customCode);
       if (response.success) {
         toast.success(response.message || 'Short URL created successfully!');
-        // Refresh URLs history list
-        if (isAuthenticated) {
-          fetchUrls();
+        
+        // Store created short code in local storage
+        const newUrl = response.data;
+        const stored = localStorage.getItem('quicklink_codes');
+        const codes = stored ? JSON.parse(stored) : [];
+        if (!codes.includes(newUrl.shortCode)) {
+          codes.push(newUrl.shortCode);
+          localStorage.setItem('quicklink_codes', JSON.stringify(codes));
         }
+        
+        fetchUrls();
         return response.data;
       }
       throw new Error(response.message || 'Failed to shorten URL');
@@ -73,6 +83,13 @@ export const useUrls = () => {
       const response = await urlApi.deleteUrl(shortCode);
       if (response.success) {
         toast.success(response.message || 'Short URL deleted successfully.');
+        
+        // Remove code from local storage
+        const stored = localStorage.getItem('quicklink_codes');
+        const codes = stored ? JSON.parse(stored) : [];
+        const updated = codes.filter(c => c !== shortCode);
+        localStorage.setItem('quicklink_codes', JSON.stringify(updated));
+
         setUrls((prev) => prev.filter((u) => u.shortCode !== shortCode));
         return true;
       }

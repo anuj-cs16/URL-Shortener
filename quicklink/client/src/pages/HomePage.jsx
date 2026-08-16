@@ -15,16 +15,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUrls } from '../hooks/useUrls';
-import { useAuth } from '../hooks/useAuth';
+
 import UrlForm from '../components/url/UrlForm';
 import UrlResult from '../components/url/UrlResult';
 import UrlTable from '../components/url/UrlTable';
-import { Link } from 'react-router-dom';
 import { FiZap, FiBarChart2, FiShield } from 'react-icons/fi';
 
 const HomePage = () => {
   const { urls, isLoading, shorten, remove } = useUrls();
-  const { isAuthenticated } = useAuth();
   const [shortenedData, setShortenedData] = useState(null);
 
   const handleShortenSubmit = async (longUrl, customCode) => {
@@ -75,11 +73,6 @@ const HomePage = () => {
       <motion.section className="history-section" variants={itemVariants}>
         <div className="history-header">
           <h2>Your Short Links History</h2>
-          {!isAuthenticated && (
-            <span className="guest-login-tip">
-              💡 <Link to="/login">Log in</Link> to save links permanently to your account.
-            </span>
-          )}
         </div>
         <UrlTable urls={urls} isLoading={isLoading} onDelete={remove} />
       </motion.section>

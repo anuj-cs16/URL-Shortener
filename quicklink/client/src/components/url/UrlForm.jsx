@@ -11,7 +11,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiLink, FiCheck, FiClipboard, FiZap, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiLink, FiClipboard, FiZap, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const UrlForm = ({ onSubmit, isLoading }) => {

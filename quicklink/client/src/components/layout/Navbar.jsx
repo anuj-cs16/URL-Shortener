@@ -12,23 +12,12 @@
  */
 
 import React, { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiUser, FiSettings, FiLock, FiLogOut, FiLayout, FiActivity } from 'react-icons/fi';
-import NotificationBell from '../notifications/NotificationBell';
+import { FiMenu, FiX } from 'react-icons/fi';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    setDropdownOpen(false);
-    await logout();
-    navigate('/');
-  };
 
   const navLinkClass = ({ isActive }) =>
     `nav-link ${isActive ? 'nav-link-active' : ''}`;
@@ -45,91 +34,15 @@ const Navbar = () => {
         {/* Center Section: Navigation Links (Desktop) */}
         <div className="navbar-links-desktop">
           <NavLink to="/" className={navLinkClass}>Home</NavLink>
-          {isAuthenticated && (
-            <>
-              <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
-              <NavLink to="/analytics" className={navLinkClass}>Analytics</NavLink>
-            </>
-          )}
+          <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
+          <NavLink to="/analytics" className={navLinkClass}>Analytics</NavLink>
         </div>
 
-        {/* Right Section: Auth & Settings (Desktop) */}
-        <div className="navbar-actions-desktop">
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
-              <NotificationBell />
-              
-              {/* User Avatar Circle */}
-              <button
-                className="user-avatar-btn"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                aria-label="User profile options"
-              >
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </button>
-
-              {/* Dropdown Menu */}
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <>
-                    <div className="dropdown-overlay" onClick={() => setDropdownOpen(false)} />
-                    <motion.div
-                      className="user-dropdown-menu"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <div className="dropdown-user-info">
-                        <p className="dropdown-user-name">{user?.name}</p>
-                        <p className="dropdown-user-email">{user?.email}</p>
-                      </div>
-                      <div className="divider" style={{ margin: '8px 0' }} />
-                      <Link
-                        to="/dashboard"
-                        className="dropdown-item"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <FiLayout /> Dashboard
-                      </Link>
-                      <Link
-                        to="/notifications"
-                        className="dropdown-item"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <FiActivity /> Notifications
-                      </Link>
-                      <Link
-                        to="/settings/notifications"
-                        className="dropdown-item"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <FiSettings /> Notification Settings
-                      </Link>
-                      <div className="divider" style={{ margin: '8px 0' }} />
-                      <button className="dropdown-item dropdown-item-logout" onClick={handleLogout}>
-                        <FiLogOut /> Logout
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <Link to="/login" className="btn btn-outline" style={{ height: '38px', fontSize: '0.85rem' }}>
-                Login
-              </Link>
-              <Link to="/signup" className="btn btn-primary" style={{ height: '38px', fontSize: '0.85rem', padding: '0 16px' }}>
-                Sign Up
-              </Link>
-            </div>
-          )}
-        </div>
+        {/* Dummy container to balance flex layout on desktop if needed, otherwise CSS handles it */}
+        <div className="navbar-actions-desktop" />
 
         {/* Mobile Navbar Hamburger Controls */}
         <div className="navbar-mobile-controls">
-          {isAuthenticated && <NotificationBell />}
           <button
             className="hamburger-toggle-btn"
             onClick={() => setIsOpen(!isOpen)}
@@ -152,27 +65,8 @@ const Navbar = () => {
           >
             <div className="mobile-drawer-links">
               <NavLink to="/" className={navLinkClass} onClick={() => setIsOpen(false)}>Home</NavLink>
-              {isAuthenticated ? (
-                <>
-                  <NavLink to="/dashboard" className={navLinkClass} onClick={() => setIsOpen(false)}>Dashboard</NavLink>
-                  <NavLink to="/analytics" className={navLinkClass} onClick={() => setIsOpen(false)}>Analytics</NavLink>
-                  <NavLink to="/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Notifications</NavLink>
-                  <NavLink to="/settings/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Settings</NavLink>
-                  <div className="divider" style={{ margin: '16px 0' }} />
-                  <button className="btn btn-outline" style={{ width: '100%', height: '40px' }} onClick={handleLogout}>
-                    <FiLogOut /> Logout
-                  </button>
-                </>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                  <Link to="/login" className="btn btn-outline" style={{ width: '100%', height: '40px' }} onClick={() => setIsOpen(false)}>
-                    Login
-                  </Link>
-                  <Link to="/signup" className="btn btn-primary" style={{ width: '100%', height: '40px' }} onClick={() => setIsOpen(false)}>
-                    Sign Up
-                  </Link>
-                </div>
-              )}
+              <NavLink to="/dashboard" className={navLinkClass} onClick={() => setIsOpen(false)}>Dashboard</NavLink>
+              <NavLink to="/analytics" className={navLinkClass} onClick={() => setIsOpen(false)}>Analytics</NavLink>
             </div>
           </motion.div>
         )}

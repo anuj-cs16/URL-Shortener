@@ -38,6 +38,7 @@ const UrlAnalyticsPage = () => {
   const [browserData, setBrowserData] = useState([]);
   const [countryData, setCountryData] = useState([]);
   const [recentClicks, setRecentClicks] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [dateRange, setDateRange] = useState(7); // default 7 days
 
   const fetchUrlAnalytics = useCallback(async () => {

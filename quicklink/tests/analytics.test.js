@@ -84,13 +84,23 @@ describe('QuickLink Analytics Dashboard Suite', () => {
 
   // ── TEST 1: GET /api/analytics/dashboard ───────────────────
   describe('GET /api/analytics/dashboard', () => {
-    it('Should return 401 for guest user', async () => {
+    it('Should return empty stats for guest user without codes', async () => {
       const res = await request(app)
         .get('/api/analytics/dashboard')
-        .expect(401);
+        .expect(200);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('Please login to access this');
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.totalUrls).toBe(0);
+      expect(res.body.data.totalClicks).toBe(0);
+    });
+
+    it('Should return stats for guest user with codes', async () => {
+      const res = await request(app)
+        .get(`/api/analytics/dashboard?codes=${urlA.shortCode}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.totalUrls).toBe(1);
     });
 
     it('Should return stats for logged in user', async () => {
@@ -203,14 +213,14 @@ describe('QuickLink Analytics Dashboard Suite', () => {
       expect(res.body.data.url.shortCode).toBe(urlA.shortCode);
     });
 
-    it('Should return 403 for another user\'s URL', async () => {
+    it('Should return analytics for another user\'s URL (publicly accessible)', async () => {
       const res = await request(app)
         .get(`/api/analytics/url/${urlA.shortCode}`)
         .set('Cookie', [`token=${tokenB}`])
-        .expect(403);
+        .expect(200);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('You can only view analytics for your own URLs');
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.url.shortCode).toBe(urlA.shortCode);
     });
 
     it('Should return 404 for non-existent URL', async () => {

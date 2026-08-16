@@ -1,43 +1,24 @@
 /**
  * @file       DashboardPage.jsx
- * @description User workspace dashboard page. Serves main shortening forms,
- *              URL tables, profile metrics, and password-change modals.
+ * @description Guest workspace dashboard page. Serves main shortening forms,
+ *              URL tables, and client-side aggregated metrics.
  * @module     pages/DashboardPage
  * @requires   react
- * @requires   hooks/useAuth
  * @requires   hooks/useUrls
- * @requires   api/authApi
  * @requires   framer-motion
  * @created    2026-08-12
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../hooks/useAuth';
 import { useUrls } from '../hooks/useUrls';
-import * as authApi from '../api/authApi';
 import UrlForm from '../components/url/UrlForm';
 import UrlResult from '../components/url/UrlResult';
 import UrlTable from '../components/url/UrlTable';
-import { FiUser, FiMail, FiCalendar, FiLink, FiActivity, FiX, FiCheck, FiLock } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
+import { FiLink, FiActivity, FiZap } from 'react-icons/fi';
 
 const DashboardPage = () => {
-  const { user, updateUser } = useAuth();
   const { urls, isLoading, shorten, remove } = useUrls();
   const [shortenedData, setShortenedData] = useState(null);
-
-  // Modal display states
-  const [editOpen, setEditOpen] = useState(false);
-  const [passwordOpen, setPasswordOpen] = useState(false);
-
-  // Form states
-  const [editName, setEditName] = useState(user?.name || '');
-  const [editEmail, setEditEmail] = useState(user?.email || '');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [formLoading, setFormLoading] = useState(false);
 
   const handleShortenSubmit = async (longUrl, customCode) => {
     try {
@@ -48,364 +29,140 @@ const DashboardPage = () => {
     }
   };
 
-  const handleUpdateProfileSubmit = async (e) => {
-    e.preventDefault();
-    if (!editName || !editEmail) {
-      toast.error('Name and Email are required.');
-      return;
-    }
-    setFormLoading(true);
-    try {
-      const response = await authApi.updateProfile(editName, editEmail);
-      if (response.success && response.data?.user) {
-        updateUser(response.data.user);
-        toast.success('Profile updated successfully!');
-        setEditOpen(false);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Profile update failed.');
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleChangePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('All fields are required.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters.');
-      return;
-    }
-    setFormLoading(true);
-    try {
-      const response = await authApi.changePassword(currentPassword, newPassword);
-      if (response.success) {
-        toast.success('Password changed successfully!');
-        setPasswordOpen(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Password update failed.');
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const formattedDate = new Date(user?.createdAt).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
-
+  // Client-side statistics aggregations
+  const totalUrls = urls.length;
   const totalClicks = urls.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
+  const activeUrls = urls.filter((url) => !url.isExpired).length;
 
   return (
-    <div className="page-wrapper dashboard-layout">
-      {/* Left Column: Shortener and URL Grid */}
-      <main className="dashboard-main-content">
+    <div className="page-wrapper dashboard-container">
+      <header className="dashboard-header">
         <h1 className="dashboard-title">My Links Dashboard</h1>
+        <p className="dashboard-subtitle">Manage, track, and analyze all your shortened guest URLs in one place.</p>
+      </header>
+
+      {/* Stats Cards Row */}
+      <section className="stats-grid">
+        <div className="glass-card stat-card">
+          <div className="stat-icon-wrapper" style={{ color: 'var(--primary)', background: 'rgba(108, 99, 255, 0.1)' }}>
+            <FiLink />
+          </div>
+          <div className="stat-details">
+            <span className="stat-label">Total Shortened Links</span>
+            <span className="stat-value">{totalUrls}</span>
+          </div>
+        </div>
+
+        <div className="glass-card stat-card">
+          <div className="stat-icon-wrapper" style={{ color: 'var(--secondary)', background: 'rgba(255, 0, 127, 0.1)' }}>
+            <FiActivity />
+          </div>
+          <div className="stat-details">
+            <span className="stat-label">Accumulated Clicks</span>
+            <span className="stat-value">{totalClicks}</span>
+          </div>
+        </div>
+
+        <div className="glass-card stat-card">
+          <div className="stat-icon-wrapper" style={{ color: '#4CAF50', background: 'rgba(76, 175, 80, 0.1)' }}>
+            <FiZap />
+          </div>
+          <div className="stat-details">
+            <span className="stat-label">Active Redirects</span>
+            <span className="stat-value">{activeUrls}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Shortener Form Section */}
+      <section className="shortener-box">
         <UrlForm onSubmit={handleShortenSubmit} isLoading={isLoading} />
         {shortenedData && <UrlResult urlData={shortenedData} />}
-        
-        <div style={{ marginTop: '30px' }}>
-          <UrlTable urls={urls} isLoading={isLoading} onDelete={remove} />
-        </div>
-      </main>
+      </section>
 
-      {/* Right Column: Profile details */}
-      <aside className="dashboard-sidebar">
-        <div className="glass-card profile-sidebar-card">
-          <div className="profile-avatar-circle">
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
-          <h2 className="profile-name-txt">{user?.name}</h2>
-          <p className="profile-role-txt">{user?.role === 'admin' ? 'Administrator' : 'Premium Creator'}</p>
-          
-          <div className="divider" style={{ margin: '16px 0' }} />
-
-          <div className="profile-meta-list">
-            <div className="profile-meta-item">
-              <FiMail className="meta-icon" />
-              <div>
-                <p className="meta-lbl">Email Address</p>
-                <p className="meta-val">{user?.email}</p>
-              </div>
-            </div>
-            <div className="profile-meta-item">
-              <FiCalendar className="meta-icon" />
-              <div>
-                <p className="meta-lbl">Member Since</p>
-                <p className="meta-val">{formattedDate}</p>
-              </div>
-            </div>
-            <div className="profile-meta-item">
-              <FiLink className="meta-icon" style={{ color: 'var(--primary)' }} />
-              <div>
-                <p className="meta-lbl">Shortened Links</p>
-                <p className="meta-val highlight">{urls.length}</p>
-              </div>
-            </div>
-            <div className="profile-meta-item">
-              <FiActivity className="meta-icon" style={{ color: 'var(--secondary)' }} />
-              <div>
-                <p className="meta-lbl">Accumulated Clicks</p>
-                <p className="meta-val" style={{ color: 'var(--secondary)', fontWeight: 700 }}>{totalClicks}</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button className="btn btn-outline" style={{ width: '100%', height: '40px', fontSize: '0.88rem' }} onClick={() => setEditOpen(true)}>
-              Edit Profile Settings
-            </button>
-            <button className="btn btn-outline" style={{ width: '100%', height: '40px', fontSize: '0.88rem' }} onClick={() => setPasswordOpen(true)}>
-              Change Account Password
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Edit Profile Modal */}
-      <AnimatePresence>
-        {editOpen && (
-          <div className="modal-overlay-bg">
-            <motion.div
-              className="modal-container-card glass-card"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 30 }}
-            >
-              <div className="modal-header-row">
-                <h3>Edit Profile Details</h3>
-                <button className="close-modal-btn" onClick={() => setEditOpen(false)}>
-                  <FiX />
-                </button>
-              </div>
-              <form onSubmit={handleUpdateProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
-                <div>
-                  <label className="input-label-tag">Full Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="input-label-tag">Email Address</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                  <button type="button" className="btn btn-outline" style={{ flex: 1, height: '40px' }} onClick={() => setEditOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '40px' }} disabled={formLoading}>
-                    {formLoading ? 'Saving...' : 'Save Settings'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Change Password Modal */}
-      <AnimatePresence>
-        {passwordOpen && (
-          <div className="modal-overlay-bg">
-            <motion.div
-              className="modal-container-card glass-card"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 30 }}
-            >
-              <div className="modal-header-row">
-                <h3>Change Account Password</h3>
-                <button className="close-modal-btn" onClick={() => setPasswordOpen(false)}>
-                  <FiX />
-                </button>
-              </div>
-              <form onSubmit={handleChangePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
-                <div>
-                  <label className="input-label-tag">Current Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="input-label-tag">New Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="input-label-tag">Confirm New Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                  <button type="button" className="btn btn-outline" style={{ flex: 1, height: '40px' }} onClick={() => setPasswordOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '40px' }} disabled={formLoading}>
-                    {formLoading ? 'Saving...' : 'Update Password'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* URLs History Table Section */}
+      <section className="table-box" style={{ marginTop: '40px' }}>
+        <UrlTable urls={urls} isLoading={isLoading} onDelete={remove} />
+      </section>
 
       <style>{`
-        .dashboard-layout {
+        .dashboard-container {
+          max-width: 960px;
+          margin: 0 auto;
+          padding: 40px 20px;
           display: flex;
           flex-direction: column;
           gap: 30px;
+          width: 100%;
         }
-        .dashboard-main-content {
-          flex: 1;
+        .dashboard-header {
+          text-align: left;
         }
         .dashboard-title {
-          font-size: 1.8rem;
-          font-weight: 800;
-          margin-bottom: 24px;
-        }
-        .dashboard-sidebar {
-          width: 100%;
-        }
-        .profile-sidebar-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .profile-avatar-circle {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-          color: white;
           font-size: 2.2rem;
           font-weight: 800;
+          letter-spacing: -0.5px;
+          background: linear-gradient(135deg, #ffffff 0%, var(--text-secondary) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin-bottom: 8px;
+        }
+        .dashboard-subtitle {
+          color: var(--text-muted);
+          font-size: 0.95rem;
+        }
+        .stats-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        .stat-card {
+          padding: 24px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          border-radius: var(--radius-lg);
+          transition: var(--transition);
+        }
+        .stat-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+        .stat-icon-wrapper {
+          width: 54px;
+          height: 54px;
+          border-radius: var(--radius-md);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
-          margin-bottom: 16px;
+          font-size: 1.5rem;
+          flex-shrink: 0;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .profile-name-txt {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: white;
-          text-align: center;
-        }
-        .profile-role-txt {
-          font-size: 0.82rem;
-          color: var(--text-muted);
-          margin-top: 2px;
-          text-transform: uppercase;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-        }
-        .profile-meta-list {
-          width: 100%;
+        .stat-details {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 2px;
         }
-        .profile-meta-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .meta-icon {
-          font-size: 1.25rem;
-          color: var(--text-secondary);
-          flex-shrink: 0;
-        }
-        .meta-lbl {
-          font-size: 0.72rem;
+        .stat-label {
+          font-size: 0.75rem;
           color: var(--text-muted);
-          font-weight: 600;
           text-transform: uppercase;
+          letter-spacing: 0.8px;
+          font-weight: 600;
         }
-        .meta-val {
-          font-size: 0.9rem;
-          color: var(--text-secondary);
-          font-weight: 500;
-          word-break: break-all;
-        }
-        
-        /* Modal Backdrop */
-        .modal-overlay-bg {
-          position: fixed;
-          inset: 0;
-          background-color: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          z-index: 200;
-        }
-        .modal-container-card {
-          max-width: 440px;
-          width: 100%;
-          padding: 24px;
-        }
-        .modal-header-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .modal-header-row h3 {
-          font-size: 1.15rem;
-          font-weight: 700;
-        }
-        .close-modal-btn {
-          background: transparent;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-size: 1.25rem;
-          display: flex;
-          align-items: center;
-        }
-        .close-modal-btn:hover {
+        .stat-value {
+          font-size: 1.8rem;
+          font-weight: 800;
           color: white;
         }
+        .shortener-box {
+          width: 100%;
+        }
 
-        @media (min-width: 768px) {
-          .dashboard-layout {
-            flex-direction: row;
-          }
-          .dashboard-sidebar {
-            width: 280px;
-            flex-shrink: 0;
+        @media (min-width: 576px) {
+          .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
           }
         }
       `}</style>

@@ -245,8 +245,27 @@ const redirectToLongUrl = async (req, res, next) => {
  */
 const getAllUrls = async (req, res, next) => {
   try {
-    // If guest, return empty history array
+    // If guest, check query parameter `codes`
     if (!req.user) {
+      const { codes } = req.query;
+      if (codes) {
+        const codesArray = codes.split(',');
+        const urls = await Url.find({ shortCode: { $in: codesArray } }).sort({ createdAt: -1 });
+        const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+        const formattedUrls = urls.map((url) => {
+          const obj = url.toObject();
+          return {
+            ...obj,
+            shortUrl: `${baseUrl}/${obj.shortCode}`,
+            isExpired: url.isExpired(),
+          };
+        });
+        return res.status(200).json({
+          success: true,
+          count: formattedUrls.length,
+          data: formattedUrls,
+        });
+      }
       return res.status(200).json({
         success: true,
         count: 0,
