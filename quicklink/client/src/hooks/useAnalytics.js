@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import * as analyticsApi from '../api/analyticsApi';
-
+import { useAuthContext } from '../context/AuthContext';
 
 export const useAnalytics = () => {
   const [stats, setStats] = useState({ totalUrls: 0, totalClicks: 0, activeUrls: 0, urlsThisMonth: 0 });
@@ -22,22 +22,10 @@ export const useAnalytics = () => {
   const [topUrls, setTopUrls] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState(7); // 7, 30, 90 days filter
+  const { isAuthenticated } = useAuthContext();
 
   const fetchAllAnalytics = useCallback(async () => {
-    const stored = localStorage.getItem('quicklink_codes');
-    const codes = stored ? JSON.parse(stored) : [];
-
-    if (codes.length === 0) {
-      setStats({ totalUrls: 0, totalClicks: 0, activeUrls: 0, urlsThisMonth: 0 });
-      setClicksData([]);
-      setDeviceData({});
-      setBrowserData([]);
-      setCountryData([]);
-      setReferrerData([]);
-      setTopUrls([]);
-      return;
-    }
-
+    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const [
@@ -49,13 +37,13 @@ export const useAnalytics = () => {
         referrerRes,
         topUrlsRes,
       ] = await Promise.all([
-        analyticsApi.getDashboardStats(codes),
-        analyticsApi.getClicksOverTime(dateRange, codes),
-        analyticsApi.getDeviceStats(codes),
-        analyticsApi.getBrowserStats(codes),
-        analyticsApi.getCountryStats(codes),
-        analyticsApi.getReferrerStats(codes),
-        analyticsApi.getTopUrls(5, codes),
+        analyticsApi.getDashboardStats(),
+        analyticsApi.getClicksOverTime(dateRange),
+        analyticsApi.getDeviceStats(),
+        analyticsApi.getBrowserStats(),
+        analyticsApi.getCountryStats(),
+        analyticsApi.getReferrerStats(),
+        analyticsApi.getTopUrls(5),
       ]);
 
       if (dashboardStatsRes.success) setStats(dashboardStatsRes.data || {});
@@ -70,7 +58,7 @@ export const useAnalytics = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [dateRange]);
+  }, [isAuthenticated, dateRange]);
 
   // Load analytics when authentication state or date filters change
   useEffect(() => {
