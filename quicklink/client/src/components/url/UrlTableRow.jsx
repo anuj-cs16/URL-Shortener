@@ -18,7 +18,7 @@ import { FiCopy, FiCheck, FiTrash2, FiBarChart2, FiClock } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion';
 
 const UrlTableRow = ({ url, onDelete, isMobile = false }) => {
-  const { shortCode, longUrl, clicks, expiresAt } = url;
+  const { shortCode, longUrl, clicks, expiresAt, shortUrl } = url;
   const [copied, setCopied] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -28,9 +28,6 @@ const UrlTableRow = ({ url, onDelete, isMobile = false }) => {
       return () => clearTimeout(t);
     }
   }, [copied]);
-
-  const appUrl = process.env.BASE_URL || window.location.origin;
-  const shortUrl = `${appUrl}/${shortCode}`;
 
   const handleDelete = () => {
     onDelete(shortCode);

@@ -24,7 +24,7 @@ const BrowserBarChart = ({ data = [], isLoading = false }) => {
   // Take top 6 browsers
   const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 6);
 
-  const labels = sortedData.length > 0 ? sortedData.map((d) => d._id || 'Unknown') : ['No Data'];
+  const labels = sortedData.length > 0 ? sortedData.map((d) => d.browser || 'Unknown') : ['No Data'];
   const values = sortedData.length > 0 ? sortedData.map((d) => d.count) : [0];
 
   const chartData = {

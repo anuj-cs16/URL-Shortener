@@ -27,7 +27,6 @@ const TopUrlsTable = ({ urls = [], isLoading = false }) => {
     return <span className="rank-number-badge">{index + 1}</span>;
   };
 
-  const appUrl = process.env.BASE_URL || window.location.origin;
 
   return (
     <div className="glass-card top-urls-card">
@@ -50,9 +49,9 @@ const TopUrlsTable = ({ urls = [], isLoading = false }) => {
             </thead>
             <tbody>
               {urls.map((url, index) => {
-                const shortUrl = `${appUrl}/${url.shortCode}`;
+                const shortUrl = url.shortUrl;
                 const truncatedLongUrl = url.longUrl.length > 50 ? `${url.longUrl.substring(0, 47)}...` : url.longUrl;
-                
+
                 return (
                   <tr key={url.shortCode}>
                     <td style={{ textAlign: 'center', padding: '12px 6px' }}>{getRankBadge(index)}</td>

@@ -20,6 +20,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Security: run as non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeuser -u 1001
+
 # Install production dependencies only
 COPY package*.json ./
 RUN npm ci --production
@@ -37,6 +41,11 @@ COPY public/ ./public/
 
 # Copy built React client from builder stage
 COPY --from=client-builder /app/client/build ./client/build
+
+# Set ownership
+RUN chown -R nodeuser:nodejs /app
+
+USER nodeuser
 
 # Set environment
 ENV NODE_ENV=production

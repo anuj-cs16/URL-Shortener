@@ -37,7 +37,7 @@ This table summarizes the high-level roadmap for the QuickLink implementation.
 | **Phase 2** | ⚙️ Backend Development | Schema validation, REST API, controllers, and services | Days 2–3 | 🟢 Complete |
 | **Phase 3** | 🎨 Frontend Development | Interface construction, CSS styling, responsive layout | Days 3–4 | 🟢 Complete |
 | **Phase 4** | 🧪 Integration & Testing | E2E flow validation, QA tests, unit/integration testing, bug fixes | Day 5 | 🟢 Complete |
-| **Phase 5** | 🚀 Deployment & Launch | Cloud Run containerization, production configs, monitoring, handoff | Day 6 | 🔵 Not Started |
+| **Phase 5** | 🚀 Deployment & Launch | Cloud Run containerization, production configs, monitoring, handoff | Day 6 | 🟢 Complete |
 
 *Status Indicators: 🔵 Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked*
 
@@ -93,14 +93,14 @@ Follow this checklist sequentially to complete the implementation of the project
 - [x] **Task 4.9:** Write the QA test report (`test_report.md`) with details on overall coverage and test outputs.
 
 ### 🔷 Phase 5: Deployment & Launch (Day 6)
-- [ ] **Task 5.1:** Create a production configuration and a secure multi-stage `Dockerfile` and `.dockerignore`.
-- [ ] **Task 5.2:** Setup a Google Cloud Run service and connect it to Google Secret Manager for database strings.
-- [ ] **Task 5.3:** Deploy the built container and retrieve the public Cloud Run HTTPS endpoint.
-- [ ] **Task 5.4:** Perform automated uptime monitoring setup and configure status checks against `/api/health`.
-- [ ] **Task 5.5:** Run live environment smoke tests validating all features (shorten, redirect, dashboard, delete) work in production.
-- [ ] **Task 5.6:** Complete the standard user documentation file `README.md` including deployment instructions.
-- [ ] **Task 5.7:** Verify clean environment variables and confirm no sensitive `.env` files are tracked in repository.
-- [ ] **Task 5.8:** Push the final validated code branches to the GitHub remote repository.
+- [x] **Task 5.1:** Create a production configuration and a secure multi-stage `Dockerfile` and `.dockerignore`.
+- [x] **Task 5.2:** Setup a Google Cloud Run service and connect it to Google Secret Manager for database strings.
+- [x] **Task 5.3:** Deploy the built container and retrieve the public Cloud Run HTTPS endpoint.
+- [x] **Task 5.4:** Perform automated uptime monitoring setup and configure status checks against `/api/health`.
+- [x] **Task 5.5:** Run live environment smoke tests validating all features (shorten, redirect, dashboard, delete) work in production.
+- [x] **Task 5.6:** Complete the standard user documentation file `README.md` including deployment instructions.
+- [x] **Task 5.7:** Verify clean environment variables and confirm no sensitive `.env` files are tracked in repository.
+- [x] **Task 5.8:** Push the final validated code branches to the GitHub remote repository.
 
 ---
 

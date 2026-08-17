@@ -24,7 +24,7 @@ const CountryBarChart = ({ data = [], isLoading = false }) => {
   // Take top 10 countries
   const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 10);
 
-  const labels = sortedData.length > 0 ? sortedData.map((d) => d._id || 'Unknown') : ['No Data'];
+  const labels = sortedData.length > 0 ? sortedData.map((d) => d.country || 'Unknown') : ['No Data'];
   const values = sortedData.length > 0 ? sortedData.map((d) => d.count) : [0];
 
   const chartData = {

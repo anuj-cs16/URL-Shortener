@@ -49,9 +49,9 @@ const UrlAnalyticsPage = () => {
         const payload = response.data;
         setUrlInfo(payload.url || null);
         setClicksData(payload.clicksOverTime || []);
-        setDeviceData(payload.devices || {});
-        setBrowserData(payload.browsers || []);
-        setCountryData(payload.countries || []);
+        setDeviceData(payload.deviceBreakdown || {});
+        setBrowserData(payload.browserBreakdown || []);
+        setCountryData(payload.countryBreakdown || []);
         setRecentClicks(payload.recentClicks || []);
       } else {
         toast.error('Failed to load link analytics');

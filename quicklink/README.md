@@ -168,19 +168,45 @@ docker run -p 8080:8080 \
 ```
 
 ### Deploy to Google Cloud Run
-```bash
-# Build and push to Container Registry
-gcloud builds submit --tag gcr.io/PROJECT_ID/quicklink
 
-# Deploy to Cloud Run
+#### Option A: Using the Automated PowerShell Script
+You can use the provided PowerShell deployment script to automate the entire process (creating the Artifact Registry repository, building the container using Google Cloud Build, checking Secret Manager secrets, and deploying to Cloud Run):
+```powershell
+# Open PowerShell and run:
+.\deploy.ps1 -ProjectId "your-gcp-project-id" -Region "us-central1" -ServiceName "quicklink"
+```
+
+#### Option B: Manual CLI Commands
+```bash
+# Build and push to Artifact Registry using Cloud Build (no local Docker required)
+gcloud builds submit --tag us-central1-docker.pkg.dev/PROJECT_ID/quicklink-repo/quicklink:latest
+
+# Deploy to Cloud Run linking to Secret Manager values
 gcloud run deploy quicklink \
-  --image gcr.io/PROJECT_ID/quicklink \
+  --image us-central1-docker.pkg.dev/PROJECT_ID/quicklink-repo/quicklink:latest \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars NODE_ENV=production \
-  --set-secrets MONGO_URI=mongo-uri:latest,JWT_SECRET=jwt-secret:latest
+  --set-env-vars NODE_ENV=production,BASE_URL=https://quicklink-PROJECT_ID.a.run.app \
+  --set-secrets MONGODB_URI=MONGODB_URI:latest,JWT_SECRET=JWT_SECRET:latest \
+  --min-instances 1 \
+  --max-instances 10 \
+  --memory 512Mi \
+  --cpu 1 \
+  --concurrency 80 \
+  --timeout 60
 ```
+
+#### Option C: Automated CI/CD (GitHub Actions)
+A GitHub Actions workflow is preconfigured in `.github/workflows/deploy.yml`. To set it up:
+1. Ensure GitHub Actions secrets are set:
+   - `GCP_PROJECT_ID`: Your GCP Project ID
+   - `GCP_SA_KEY`: The JSON Key of a Google Cloud Service Account with permissions to Cloud Run, Cloud Build, and Artifact Registry.
+2. Push your changes to the `main` branch, which will automatically run tests, build the production image, push it to Artifact Registry, and deploy to Cloud Run.
+
+> [!NOTE]
+> Make sure `MONGODB_URI` and `JWT_SECRET` secrets are created and updated in **Google Secret Manager** before deployment.
+
 
 ---
 

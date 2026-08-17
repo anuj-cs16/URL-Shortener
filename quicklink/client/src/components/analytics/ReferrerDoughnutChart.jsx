@@ -24,7 +24,7 @@ const ReferrerDoughnutChart = ({ data = [], isLoading = false }) => {
   // Take top 5 referrers, sort
   const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 5);
 
-  const labels = sortedData.length > 0 ? sortedData.map((d) => d._id || 'Direct') : ['No Data'];
+  const labels = sortedData.length > 0 ? sortedData.map((d) => d.referrer || 'Direct') : ['No Data'];
   const values = sortedData.length > 0 ? sortedData.map((d) => d.count) : [1];
   const total = values.reduce((a, b) => a + b, 0);
 

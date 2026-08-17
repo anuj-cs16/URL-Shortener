@@ -23,7 +23,7 @@ const DeviceDoughnutChart = ({ data = {}, isLoading = false }) => {
 
   const keys = Object.keys(data);
   const labels = keys.length > 0 ? keys.map((k) => k.charAt(0).toUpperCase() + k.slice(1)) : ['No Data'];
-  const values = keys.length > 0 ? Object.values(data) : [1];
+  const values = keys.length > 0 ? Object.values(data).map((v) => v.count) : [1];
   const total = values.reduce((a, b) => a + b, 0);
 
   const chartData = {
