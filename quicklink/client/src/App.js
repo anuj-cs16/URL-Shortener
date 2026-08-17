@@ -30,6 +30,8 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import UrlAnalyticsPage from './pages/UrlAnalyticsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import EmailSettingsPage from './pages/EmailSettingsPage';
+import VerifyTwoFactorPage from './pages/VerifyTwoFactorPage';
+import SecurityPage from './pages/SecurityPage';
 
 // Route guards & utilities
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -109,6 +111,15 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/settings/security"
+                  element={
+                    <ProtectedRoute>
+                      <SecurityPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
 
                 {/* Fallback routing */}
                 <Route path="*" element={<Navigate to="/" replace />} />

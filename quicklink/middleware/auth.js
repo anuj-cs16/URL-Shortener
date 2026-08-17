@@ -46,11 +46,9 @@ const isAuthenticated = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
+    // Decode token first without verifying signature to get user ID
+    const decodedPayload = jwt.decode(token);
+    if (!decodedPayload || !decodedPayload.id) {
       return res.status(401).json({
         success: false,
         message: 'Please login to access this',
@@ -58,7 +56,7 @@ const isAuthenticated = async (req, res, next) => {
     }
 
     // Find user in database
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decodedPayload.id);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -66,8 +64,20 @@ const isAuthenticated = async (req, res, next) => {
       });
     }
 
-    // Attach user instance to request
+    // Verify token using user's jwtSecret
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET + (user.jwtSecret || ''));
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please login to access this',
+      });
+    }
+
+    // Attach user and 2FA status to request
     req.user = user;
+    req.twoFactorVerified = decoded.twoFactorVerified || false;
     next();
   } catch (error) {
     next(error);
@@ -84,14 +94,17 @@ const isGuest = async (req, res, next) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        
-        if (user) {
-          return res.status(400).json({
-            success: false,
-            message: 'You are already logged in',
-          });
+        const decodedPayload = jwt.decode(token);
+        if (decodedPayload && decodedPayload.id) {
+          const user = await User.findById(decodedPayload.id);
+          
+          if (user) {
+            jwt.verify(token, process.env.JWT_SECRET + (user.jwtSecret || ''));
+            return res.status(400).json({
+              success: false,
+              message: 'You are already logged in',
+            });
+          }
         }
       } catch (err) {
         // Token is invalid/expired, treat as guest and proceed
@@ -115,10 +128,15 @@ const optionalAuth = async (req, res, next) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        if (user) {
-          req.user = user;
+        const decodedPayload = jwt.decode(token);
+        if (decodedPayload && decodedPayload.id) {
+          const user = await User.findById(decodedPayload.id);
+          if (user) {
+            // Verify with user-specific secret
+            const decoded = jwt.verify(token, process.env.JWT_SECRET + (user.jwtSecret || ''));
+            req.user = user;
+            req.twoFactorVerified = decoded.twoFactorVerified || false;
+          }
         }
       } catch (err) {
         // Token invalid/expired, keep req.user as null

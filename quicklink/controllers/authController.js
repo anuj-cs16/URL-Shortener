@@ -12,8 +12,9 @@ const User = require('../models/User');
 const Url = require('../models/Url');
 const EmailSettings = require('../models/EmailSettings');
 const Notification = require('../models/Notification');
+const LoginActivity = require('../models/LoginActivity');
 const emailService = require('../utils/emailService');
-const { getClientIP, getLocationInfo, getBrowserInfo, getDeviceType } = require('../utils/analyticsHelper');
+const { getClientIP, getLocationInfo, getBrowserInfo, getDeviceType, getOSInfo } = require('../utils/analyticsHelper');
 
 /**
  * Helper: Generates JWT token, sets cookie options, and returns standard success response.
@@ -89,6 +90,30 @@ const register = async (req, res, next) => {
     // Create default EmailSettings for user
     await EmailSettings.create({ userId: user._id });
 
+    // Initialize security settings
+    await user.calculateSecurityScore();
+
+    // Log Activity
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = getClientIP(req);
+    const location = getLocationInfo(ip);
+    const browser = getBrowserInfo(userAgent);
+    const os = getOSInfo(userAgent);
+    const device = getDeviceType(userAgent);
+
+    await LoginActivity.create({
+      userId: user._id,
+      activityType: 'login_success',
+      ipAddress: ip,
+      country: location.country || 'Unknown',
+      city: location.city || 'Unknown',
+      browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
+      operatingSystem: os,
+      deviceType: device || 'unknown',
+      userAgent,
+      suspiciousReason: 'Account registration and automatic login',
+    });
+
     // Send Welcome Email asynchronously (do not await)
     emailService.sendWelcomeEmail(user).then(async (emailSent) => {
       // Create Welcome Notification in database
@@ -126,9 +151,27 @@ const login = async (req, res, next) => {
       });
     }
 
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = getClientIP(req);
+    const location = getLocationInfo(ip);
+    const browser = getBrowserInfo(userAgent);
+    const os = getOSInfo(userAgent);
+    const device = getDeviceType(userAgent);
+
+    const loginData = {
+      ipAddress: ip,
+      country: location.country || 'Unknown',
+      city: location.city || 'Unknown',
+      browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
+      operatingSystem: os,
+      deviceType: device || 'desktop',
+      userAgent,
+    };
+
     // Find user by email (explicitly select password)
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
+      // Vague error for security (never reveal if email exists or not)
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -138,40 +181,152 @@ const login = async (req, res, next) => {
     // Verify password match
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      await user.incrementLoginAttempts();
+
+      // Log failure in LoginActivity
+      await LoginActivity.create({
+        userId: user._id,
+        activityType: 'login_failed',
+        ipAddress: ip,
+        country: loginData.country,
+        city: loginData.city,
+        browser: loginData.browser,
+        operatingSystem: loginData.operatingSystem,
+        deviceType: loginData.deviceType,
+        userAgent,
+      });
+
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
       });
     }
 
-    // Update login timestamp
+    // Reset login attempts on successful match
+    await user.resetLoginAttempts();
+
+    // Check if 2FA is enabled
+    if (user.isTwoFactorEnabled) {
+      // Set partial login token in cookie
+      const jwt = require('jsonwebtoken');
+      const partialToken = jwt.sign(
+        { id: user._id, twoFactorVerified: false, isPartial: true },
+        process.env.JWT_SECRET + (user.jwtSecret || ''),
+        { expiresIn: '10m' } // 10 minutes verification window
+      );
+
+      const cookieOptions = {
+        expires: new Date(Date.now() + 10 * 60 * 1000),
+        httpOnly: true,
+        sameSite: 'lax',
+      };
+      if (process.env.NODE_ENV === 'production') {
+        cookieOptions.secure = true;
+      }
+
+      return res.status(200).cookie('token', partialToken, cookieOptions).json({
+        success: true,
+        requiresTwoFactor: true,
+        message: 'Please enter 2FA code',
+      });
+    }
+
+    // Calculate risk score
+    const securityHelper = require('../utils/securityHelper');
+    const riskScore = await securityHelper.calculateRiskScore(user, {
+      ip,
+      country: loginData.country,
+      browser: loginData.browser,
+    });
+
+    let isSuspicious = false;
+    let suspiciousReason = '';
+
+    if (riskScore > 60) {
+      isSuspicious = true;
+      suspiciousReason = `High login risk score calculated: ${riskScore}. IP country is ${loginData.country}.`;
+
+      // Log suspicious activity
+      await LoginActivity.create({
+        userId: user._id,
+        activityType: 'suspicious_activity',
+        ipAddress: ip,
+        country: loginData.country,
+        city: loginData.city,
+        browser: loginData.browser,
+        operatingSystem: loginData.operatingSystem,
+        deviceType: loginData.deviceType,
+        isSuspicious: true,
+        suspiciousReason,
+        userAgent,
+      });
+
+      // Send email alert (do not await)
+      emailService.sendSuspiciousLoginEmail(user, {
+        ip,
+        country: loginData.country,
+        browser: loginData.browser,
+        time: new Date(),
+        device: loginData.deviceType,
+        riskScore,
+        suspiciousReason,
+      }).catch((err) => console.error(`Failed to send suspicious login email: ${err.message}`));
+
+      // Create Notification
+      await Notification.create({
+        userId: user._id,
+        type: 'login_alert',
+        title: 'Suspicious Login Warning 🚨',
+        message: `High risk login flagged from ${loginData.browser} (${loginData.country}, IP: ${ip}).`,
+        isEmailSent: true,
+        emailSentAt: new Date(),
+        metadata: { ipAddress: ip },
+      });
+    }
+
+    // Add IP to knownIpAddresses if new
+    if (!user.knownIpAddresses.includes(ip)) {
+      user.knownIpAddresses.push(ip);
+    }
+
+    // Update login timestamp & IP
     user.lastLoginAt = new Date();
+    user.lastLoginIp = ip;
     await user.save();
 
-    // Trigger Login Security Alert asynchronously (do not await)
-    const userAgent = req.headers['user-agent'] || '';
-    const ip = getClientIP(req);
-    const location = getLocationInfo(ip);
-    const browser = getBrowserInfo(userAgent);
-    const device = getDeviceType(userAgent);
+    // Log success activity
+    await LoginActivity.create({
+      userId: user._id,
+      activityType: 'login_success',
+      ipAddress: ip,
+      country: loginData.country,
+      city: loginData.city,
+      browser: loginData.browser,
+      operatingSystem: loginData.operatingSystem,
+      deviceType: loginData.deviceType,
+      isSuspicious,
+      suspiciousReason: isSuspicious ? suspiciousReason : null,
+      userAgent,
+    });
 
-    const loginData = {
+    // Update security score
+    await user.calculateSecurityScore();
+
+    // Send normal login alert email as well
+    emailService.sendLoginAlertEmail(user, {
       ipAddress: ip,
       country: location.country || 'Unknown',
-      browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
-      deviceType: device || 'desktop',
-    };
-
-    emailService.sendLoginAlertEmail(user, loginData).then(async (emailSent) => {
-      // Create Database Notification
+      browser: loginData.browser,
+      deviceType: loginData.deviceType,
+    }).then(async (emailSent) => {
       await Notification.create({
         userId: user._id,
         type: 'login_alert',
         title: 'New Login Detected 🔔',
-        message: `New login from ${loginData.browser} on a ${loginData.deviceType} (${loginData.country}, IP: ${loginData.ipAddress}).`,
+        message: `New login from ${loginData.browser} on a ${loginData.deviceType} (${location.country || 'Unknown'}, IP: ${ip}).`,
         isEmailSent: emailSent,
         emailSentAt: emailSent ? new Date() : null,
-        metadata: loginData,
+        metadata: { ipAddress: ip },
       });
     }).catch(err => {
       console.error(`Login alert background dispatch failed: ${err.message}`);
@@ -189,6 +344,28 @@ const login = async (req, res, next) => {
  */
 const logout = async (req, res, next) => {
   try {
+    // Log logout activity
+    if (req.user) {
+      const ip = getClientIP(req);
+      const userAgent = req.headers['user-agent'] || '';
+      const location = getLocationInfo(ip);
+      const browser = getBrowserInfo(userAgent);
+      const os = getOSInfo(userAgent);
+      const device = getDeviceType(userAgent);
+
+      await LoginActivity.create({
+        userId: req.user._id,
+        activityType: 'logout',
+        ipAddress: ip,
+        country: location.country || 'Unknown',
+        city: location.city || 'Unknown',
+        browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
+        operatingSystem: os,
+        deviceType: device || 'unknown',
+        userAgent,
+      });
+    }
+
     const cookieOptions = {
       expires: new Date(Date.now()), // Expiry now
       httpOnly: true,
@@ -330,6 +507,26 @@ const changePassword = async (req, res, next) => {
 
     // Trigger Password Changed Alert asynchronously (do not await)
     const ip = getClientIP(req);
+    
+    // Log Activity in LoginActivity
+    const userAgent = req.headers['user-agent'] || '';
+    const location = getLocationInfo(ip);
+    const browser = getBrowserInfo(userAgent);
+    const os = getOSInfo(userAgent);
+    const device = getDeviceType(userAgent);
+
+    await LoginActivity.create({
+      userId: user._id,
+      activityType: 'password_changed',
+      ipAddress: ip,
+      country: location.country || 'Unknown',
+      city: location.city || 'Unknown',
+      browser: `${browser.browser || 'Unknown'} ${browser.version || ''}`.trim(),
+      operatingSystem: os,
+      deviceType: device || 'unknown',
+      userAgent,
+    });
+
     emailService.sendPasswordChangedEmail(user, ip).then(async (emailSent) => {
       // Create Database Notification
       await Notification.create({

@@ -1,0 +1,22 @@
+<h1>🔒 Account Temporarily Locked</h1>
+<p>Hello {{name}},</p>
+<p>Your QuickLink account has been temporarily locked due to multiple failed login attempts.</p>
+<p>
+  To prevent unauthorized access, we have restricted login capabilities for your email address.
+</p>
+<div class="stat-box" style="border-left-color: #E74C3C;">
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr style="border-bottom: 1px solid rgba(42, 42, 62, 0.4);">
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold; width: 120px;">Locked Until:</td>
+      <td style="padding: 8px 0; color: #FFFFFF;">{{lockUntil}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #A0A0B0; font-weight: bold;">Failed IP:</td>
+      <td style="padding: 8px 0; color: #FFFFFF; font-family: monospace;">{{ipAddress}}</td>
+    </tr>
+  </table>
+</div>
+<p style="margin-top: 24px;">
+  If this was not you, someone else may be trying to guess your password. We recommend resetting your password once your account becomes unlocked.
+</p>
+<p>Best regards,<br>The QuickLink Security Team</p>

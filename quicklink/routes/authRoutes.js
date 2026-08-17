@@ -22,12 +22,18 @@ const {
 } = require('../controllers/authController');
 
 const { isAuthenticated, isGuest } = require('../middleware/auth');
+const { loginBruteForce } = require('../middleware/bruteForce');
+const { checkAccountLocked, ipRateLimiter, sanitizeInput } = require('../middleware/security');
+
+// Apply rate limiting and sanitization globally to auth routes
+router.use(ipRateLimiter);
+router.use(sanitizeInput);
 
 // POST /api/auth/register - Register account (restricted to guests)
 router.post('/register', isGuest, register);
 
-// POST /api/auth/login - User login (restricted to guests)
-router.post('/login', isGuest, login);
+// POST /api/auth/login - User login (restricted to guests, lock checks and brute force limits applied)
+router.post('/login', isGuest, checkAccountLocked, loginBruteForce.prevent, login);
 
 // POST /api/auth/logout - User logout (restricted to authenticated users)
 router.post('/logout', isAuthenticated, logout);

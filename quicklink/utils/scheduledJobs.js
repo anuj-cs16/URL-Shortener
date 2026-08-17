@@ -353,6 +353,28 @@ const startMilestoneJob = () => {
 };
 
 /**
+ * JOB 5: Clear Expired Blocked IPs
+ * Cron schedule: Every 5 minutes (*/5 * * * *)
+ */
+const startClearExpiredBlockedIpsJob = () => {
+  cron.schedule('*/5 * * * *', async () => {
+    console.log('[Cron Job]: Clearing expired blocked IP addresses...');
+    try {
+      const BlockedIp = require('../models/BlockedIp');
+      const result = await BlockedIp.deleteMany({
+        isPermanent: false,
+        expiresAt: { $lt: new Date() },
+      });
+      if (result.deletedCount > 0) {
+        console.log(`[Cron Job]: Cleared ${result.deletedCount} expired blocked IP address(es).`);
+      }
+    } catch (error) {
+      console.error(`[Cron Job Error]: Blocked IP cleaner failed: ${error.message}`);
+    }
+  });
+};
+
+/**
  * Initializes and triggers scheduled node-cron tasks.
  */
 const initScheduledJobs = () => {
@@ -364,6 +386,7 @@ const initScheduledJobs = () => {
   startExpiryWarningJob();
   startExpiryProcessorJob();
   startMilestoneJob();
+  startClearExpiredBlockedIpsJob();
   console.log('✅ Cron Jobs initialized successfully');
 };
 

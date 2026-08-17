@@ -106,6 +106,13 @@ const Navbar = () => {
                       >
                         <FiSettings /> Notification Settings
                       </Link>
+                      <Link
+                        to="/settings/security"
+                        className="dropdown-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <FiSettings /> Security Settings
+                      </Link>
                       <div className="divider" style={{ margin: '8px 0' }} />
                       <button className="dropdown-item dropdown-item-logout" onClick={handleLogout}>
                         <FiLogOut /> Logout
@@ -157,7 +164,8 @@ const Navbar = () => {
                   <NavLink to="/dashboard" className={navLinkClass} onClick={() => setIsOpen(false)}>Dashboard</NavLink>
                   <NavLink to="/analytics" className={navLinkClass} onClick={() => setIsOpen(false)}>Analytics</NavLink>
                   <NavLink to="/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Notifications</NavLink>
-                  <NavLink to="/settings/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Settings</NavLink>
+                  <NavLink to="/settings/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Notification Settings</NavLink>
+                  <NavLink to="/settings/security" className={navLinkClass} onClick={() => setIsOpen(false)}>Security Settings</NavLink>
                   <div className="divider" style={{ margin: '16px 0' }} />
                   <button className="btn btn-outline" style={{ width: '100%', height: '40px' }} onClick={handleLogout}>
                     <FiLogOut /> Logout

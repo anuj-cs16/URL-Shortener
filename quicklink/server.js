@@ -20,6 +20,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const hpp = require('hpp');
+const { checkBlockedIp, sanitizeInput } = require('./middleware/security');
+const securityRoutes = require('./routes/securityRoutes');
 
 const connectDB = async () => {
   // Only connect to database if we are not in testing mode,
@@ -28,11 +31,13 @@ const connectDB = async () => {
     const connect = require('./config/database');
     await connect();
 
-    // Initialize email service and cron schedules after DB is ready
-    const { verifyEmailConnection } = require('./utils/emailService');
-    const { initScheduledJobs } = require('./utils/scheduledJobs');
-    verifyEmailConnection();
-    initScheduledJobs();
+    // Initialize email service and cron schedules after DB is ready (only in non-test mode)
+    if (process.env.NODE_ENV !== 'test') {
+      const { verifyEmailConnection } = require('./utils/emailService');
+      const { initScheduledJobs } = require('./utils/scheduledJobs');
+      verifyEmailConnection();
+      initScheduledJobs();
+    }
   }
 };
 
@@ -55,20 +60,25 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'"],
-    },
+      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+      fontSrc: ["'self'", "fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'"]
+    }
   },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: false
 }));
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// Global input sanitization and parameter pollution/NoSQL safeguards
+app.use(hpp());
+app.use(sanitizeInput);
+app.use(checkBlockedIp);
 
 // Serve static assets — React build in production, public/ in development
 if (process.env.NODE_ENV === 'production') {
@@ -89,6 +99,7 @@ app.get('/api/health', (req, res) => {
 
 // Mount router endpoints
 app.use('/api/auth', authRoutes);
+app.use('/api/security', securityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/', urlRoutes);

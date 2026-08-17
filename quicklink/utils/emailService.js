@@ -365,6 +365,74 @@ const sendLoginAlertEmail = async (user, loginData) => {
   });
 };
 
+/**
+ * Transactional: 2FA Enabled alert.
+ */
+const sendTwoFactorEnabledEmail = async (user) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '🛡️ Security Alert: Two-Factor Authentication Enabled',
+    template: 'two-factor-enabled',
+    context: {
+      name: user.name,
+    },
+  });
+};
+
+/**
+ * Transactional: 2FA Disabled alert.
+ */
+const sendTwoFactorDisabledEmail = async (user, ipAddress) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '⚠️ Security Alert: Two-Factor Authentication Disabled',
+    template: 'two-factor-disabled',
+    context: {
+      name: user.name,
+      ipAddress,
+    },
+  });
+};
+
+/**
+ * Transactional: Suspicious Login warning.
+ */
+const sendSuspiciousLoginEmail = async (user, loginData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '🚨 Security Alert: Suspicious login flagged',
+    template: 'suspicious-login',
+    context: {
+      name: user.name,
+      ipAddress: loginData.ip,
+      country: loginData.country,
+      browser: loginData.browser,
+      riskScore: loginData.riskScore,
+      suspiciousReason: loginData.suspiciousReason,
+    },
+  });
+};
+
+/**
+ * Transactional: Account Locked warning.
+ */
+const sendAccountLockedEmail = async (user, lockUntil, ipAddress) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '🔒 Security Alert: Account temporarily locked',
+    template: 'account-locked',
+    context: {
+      name: user.name,
+      lockUntil: new Date(lockUntil).toLocaleString(),
+      ipAddress,
+    },
+  });
+};
+
 module.exports = {
   verifyEmailConnection,
   sendWelcomeEmail,
@@ -375,4 +443,8 @@ module.exports = {
   sendUrlExpiredEmail,
   sendPasswordChangedEmail,
   sendLoginAlertEmail,
+  sendTwoFactorEnabledEmail,
+  sendTwoFactorDisabledEmail,
+  sendSuspiciousLoginEmail,
+  sendAccountLockedEmail,
 };

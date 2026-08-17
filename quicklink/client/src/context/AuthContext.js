@@ -39,12 +39,17 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await authApi.login(email, password);
-      if (response.success && response.data?.user) {
-        setUser(response.data.user);
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
+      if (response.success) {
+        if (response.requiresTwoFactor) {
+          return response;
         }
-        return response;
+        if (response.data?.user) {
+          setUser(response.data.user);
+          if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+          }
+          return response;
+        }
       }
       throw new Error(response.message || 'Login failed');
     } catch (error) {

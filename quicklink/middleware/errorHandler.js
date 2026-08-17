@@ -49,8 +49,8 @@ const errorHandler = (err, req, res, next) => {
     message = 'Duplicate field value entered';
   }
 
-  // Log error with timestamp
-  console.error(`[${new Date().toISOString()}] [Error ${statusCode}]: ${err.message}`);
+  // Log error with timestamp and stack trace
+  console.error(`[${new Date().toISOString()}] [Error ${statusCode}]: ${err.message}`, err.stack);
   
   // Standardize error message for security: do not expose stack trace or database logs
   let responseMessage = 'Something went wrong';

@@ -34,8 +34,12 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
+      const res = await login(email, password);
+      if (res && res.requiresTwoFactor) {
+        navigate('/verify-2fa');
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       // toast is automatically triggered by the useAuth hook
     } finally {
