@@ -18,6 +18,7 @@ import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiUser, FiMail, FiLock, FiUserPlus } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import SEOHead from '../components/seo/SEOHead';
 
 const SignupPage = () => {
   const { register } = useAuth();
@@ -54,7 +55,9 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="auth-page-wrapper">
+    <>
+      <SEOHead pageKey="signup" />
+      <div className="auth-page-wrapper">
       <div className="glass-card auth-container-card">
         <div className="auth-header">
           <span className="auth-logo-emoji">🔗</span>
@@ -211,6 +214,7 @@ const SignupPage = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 

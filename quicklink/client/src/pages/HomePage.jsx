@@ -21,6 +21,7 @@ import UrlResult from '../components/url/UrlResult';
 import UrlTable from '../components/url/UrlTable';
 import { Link } from 'react-router-dom';
 import { FiZap, FiBarChart2, FiShield } from 'react-icons/fi';
+import SEOHead from '../components/seo/SEOHead';
 
 const HomePage = () => {
   const { urls, isLoading, shorten, remove } = useUrls();
@@ -47,7 +48,9 @@ const HomePage = () => {
   };
 
   return (
-    <motion.div
+    <>
+      <SEOHead pageKey="home" />
+      <motion.div
       className="page-wrapper"
       variants={pageVariants}
       initial="initial"
@@ -228,6 +231,7 @@ const HomePage = () => {
         }
       `}</style>
     </motion.div>
+    </>
   );
 };
 

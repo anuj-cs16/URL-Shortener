@@ -21,6 +21,7 @@ import UrlResult from '../components/url/UrlResult';
 import UrlTable from '../components/url/UrlTable';
 import { FiMail, FiCalendar, FiLink, FiActivity, FiX } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import SEOHead from '../components/seo/SEOHead';
 
 const DashboardPage = () => {
   const { user, updateUser } = useAuth();
@@ -108,8 +109,10 @@ const DashboardPage = () => {
   const totalClicks = urls.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
 
   return (
-    <div className="page-wrapper dashboard-layout">
-      {/* Left Column: Shortener and URL Grid */}
+    <>
+      <SEOHead pageKey="dashboard" />
+      <div className="page-wrapper dashboard-layout">
+        {/* Left Column: Shortener and URL Grid */}
       <main className="dashboard-main-content">
         <h1 className="dashboard-title">My Links Dashboard</h1>
         <UrlForm onSubmit={handleShortenSubmit} isLoading={isLoading} />
@@ -410,6 +413,7 @@ const DashboardPage = () => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 

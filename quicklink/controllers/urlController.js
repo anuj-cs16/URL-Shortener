@@ -17,6 +17,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const emailService = require('../utils/emailService');
 const generateShortCode = require('../utils/generateShortCode');
+const { getCache, setCache, deleteCache } = require('../utils/cache');
 const {
   getClientIP,
   getLocationInfo,
@@ -108,6 +109,12 @@ const createShortUrl = async (req, res, next) => {
     }
     const qrCodeDataUrl = await QRCode.toDataURL(shortUrl);
 
+    // Clear caches
+    if (req.user) {
+      deleteCache(`urls_user_${req.user._id}`);
+      deleteCache(`analytics_dashboard_${req.user._id}`);
+    }
+
     res.status(201).json({
       success: true,
       data: {
@@ -139,7 +146,15 @@ const redirectToLongUrl = async (req, res, next) => {
     const { shortCode } = req.params;
     const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
 
-    const url = await Url.findOne({ shortCode });
+    // Fetch from cache first
+    let url = getCache(`redirect_${shortCode}`);
+    if (!url) {
+      url = await Url.findOne({ shortCode }).lean();
+      if (url) {
+        setCache(`redirect_${shortCode}`, url, 300);
+      }
+    }
+
     if (!url || !url.isActive) {
       if (acceptsHtml) {
         return next();
@@ -150,8 +165,9 @@ const redirectToLongUrl = async (req, res, next) => {
       });
     }
 
-    // Check if the URL has expired
-    if (url.isExpired()) {
+    // Check if the URL has expired (check against raw expiresAt date since url is a lean object)
+    const isExpired = url.expiresAt && new Date(url.expiresAt) <= new Date();
+    if (isExpired) {
       if (acceptsHtml) {
         return res.status(410).sendFile(path.join(__dirname, '..', 'public', 'expired.html'));
       }
@@ -171,7 +187,7 @@ const redirectToLongUrl = async (req, res, next) => {
     const referrerHeader = req.headers.referer || req.headers.referrer;
     const referrer = getReferrer(referrerHeader);
 
-    // Save detailed Click tracking record
+    // Save detailed Click tracking record (asynchronous write)
     const click = new Click({
       urlId: url._id,
       shortCode: url.shortCode,
@@ -187,46 +203,65 @@ const redirectToLongUrl = async (req, res, next) => {
       referrer: referrer,
       clickedAt: new Date(),
     });
-    await click.save();
+    click.save().catch((err) => console.error(`Failed to save click record: ${err.message}`));
 
-    // Increment click tracking parameters on original URL doc
-    url.clicks += 1;
-    url.lastClickedAt = new Date();
-    await url.save();
-
-    // Check click milestones in background (do not await)
+    // Invalidate stats/analytics cache on click
+    deleteCache(`url_stats_${shortCode}`);
+    deleteCache(`url_analytics_${shortCode}`);
     if (url.userId) {
-      const milestones = [10, 50, 100, 500, 1000, 5000];
-      const reachedMilestone = milestones.find((m) => url.clicks === m && !url.milestonesReached.includes(m));
-      if (reachedMilestone) {
-        User.findById(url.userId).then((user) => {
-          if (user) {
-            emailService.sendClickMilestoneEmail(user, url, reachedMilestone).then(async (emailSent) => {
-              await Notification.create({
-                userId: user._id,
-                type: 'click_milestone',
-                title: 'Popularity Milestone Reached! 🎉',
-                message: `Your link for code ${url.shortCode} reached ${reachedMilestone} clicks!`,
-                isEmailSent: emailSent,
-                emailSentAt: emailSent ? new Date() : null,
-                metadata: {
-                  shortCode: url.shortCode,
-                  clicks: url.clicks,
-                  milestone: reachedMilestone,
-                },
-              });
-            }).catch(err => {
-              console.error(`Milestone notification dispatch failed: ${err.message}`);
-            });
-          }
-        }).catch(err => {
-          console.error(`User fetch for milestone warning failed: ${err.message}`);
-        });
-
-        url.milestonesReached.push(reachedMilestone);
-        await url.save();
-      }
+      const userIdStr = url.userId.toString();
+      deleteCache(`analytics_dashboard_${userIdStr}`);
+      deleteCache(`devices_${userIdStr}`);
+      deleteCache(`browsers_${userIdStr}`);
+      deleteCache(`countries_${userIdStr}`);
+      deleteCache(`referrers_${userIdStr}`);
+      deleteCache(`clicks_time_${userIdStr}_7`);
+      deleteCache(`clicks_time_${userIdStr}_30`);
+      deleteCache(`top_urls_${userIdStr}_5`);
+      deleteCache(`top_urls_${userIdStr}_10`);
     }
+
+    // Increment click tracking parameters on original URL doc (asynchronous write)
+    Url.updateOne({ _id: url._id }, { $inc: { clicks: 1 }, $set: { lastClickedAt: new Date() } })
+      .then(async () => {
+        // Check click milestones in background
+        if (url.userId) {
+          const milestones = [10, 50, 100, 500, 1000, 5000];
+          // Since we incremented by 1, we can query current click count
+          const currentUrl = await Url.findById(url._id).select('clicks userId shortCode milestonesReached').lean();
+          if (currentUrl) {
+            const reachedMilestone = milestones.find((m) => currentUrl.clicks === m && !currentUrl.milestonesReached.includes(m));
+            if (reachedMilestone) {
+              User.findById(url.userId).lean().then((user) => {
+                if (user) {
+                  emailService.sendClickMilestoneEmail(user, currentUrl, reachedMilestone).then(async (emailSent) => {
+                    await Notification.create({
+                      userId: user._id,
+                      type: 'click_milestone',
+                      title: 'Popularity Milestone Reached! 🎉',
+                      message: `Your link for code ${url.shortCode} reached ${reachedMilestone} clicks!`,
+                      isEmailSent: emailSent,
+                      emailSentAt: emailSent ? new Date() : null,
+                      metadata: {
+                        shortCode: url.shortCode,
+                        clicks: currentUrl.clicks,
+                        milestone: reachedMilestone,
+                      },
+                    });
+                  }).catch((err) => {
+                    console.error(`Milestone notification dispatch failed: ${err.message}`);
+                  });
+                }
+              }).catch((err) => {
+                console.error(`User fetch for milestone warning failed: ${err.message}`);
+              });
+
+              await Url.updateOne({ _id: url._id }, { $push: { milestonesReached: reachedMilestone } });
+            }
+          }
+        }
+      })
+      .catch((err) => console.error(`Failed to update click count on URL: ${err.message}`));
 
     // Perform permanent redirect (301)
     res.redirect(301, url.longUrl);
@@ -245,26 +280,42 @@ const redirectToLongUrl = async (req, res, next) => {
  */
 const getAllUrls = async (req, res, next) => {
   try {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+
     // If guest, check query parameter `codes`
     if (!req.user) {
       const { codes } = req.query;
       if (codes) {
+        const cacheKey = `urls_guest_${codes}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+          res.setHeader('X-Cache', 'HIT');
+          return res.status(200).json(cached);
+        }
+
         const codesArray = codes.split(',');
-        const urls = await Url.find({ shortCode: { $in: codesArray } }).sort({ createdAt: -1 });
-        const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+        const urls = await Url.find({ shortCode: { $in: codesArray } })
+          .sort({ createdAt: -1 })
+          .select('longUrl shortCode clicks isActive expiresAt createdAt lastClickedAt customCode milestonesReached userId')
+          .lean();
+
         const formattedUrls = urls.map((url) => {
-          const obj = url.toObject();
+          const isExpired = url.expiresAt && new Date(url.expiresAt) <= new Date();
           return {
-            ...obj,
-            shortUrl: `${baseUrl}/${obj.shortCode}`,
-            isExpired: url.isExpired(),
+            ...url,
+            shortUrl: `${baseUrl}/${url.shortCode}`,
+            isExpired,
           };
         });
-        return res.status(200).json({
+
+        const responseData = {
           success: true,
           count: formattedUrls.length,
           data: formattedUrls,
-        });
+        };
+        setCache(cacheKey, responseData, 60);
+        res.setHeader('X-Cache', 'MISS');
+        return res.status(200).json(responseData);
       }
       return res.status(200).json({
         success: true,
@@ -274,23 +325,35 @@ const getAllUrls = async (req, res, next) => {
     }
 
     // Authenticated users retrieve only their URLs
-    const urls = await Url.find({ userId: req.user._id }).sort({ createdAt: -1 });
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const cacheKey = `urls_user_${req.user._id}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
+    const urls = await Url.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .select('longUrl shortCode clicks isActive expiresAt createdAt lastClickedAt customCode milestonesReached userId')
+      .lean();
 
     const formattedUrls = urls.map((url) => {
-      const obj = url.toObject();
+      const isExpired = url.expiresAt && new Date(url.expiresAt) <= new Date();
       return {
-        ...obj,
-        shortUrl: `${baseUrl}/${obj.shortCode}`,
-        isExpired: url.isExpired(),
+        ...url,
+        shortUrl: `${baseUrl}/${url.shortCode}`,
+        isExpired,
       };
     });
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       count: formattedUrls.length,
       data: formattedUrls,
-    });
+    };
+    setCache(cacheKey, responseData, 60);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -307,8 +370,17 @@ const getAllUrls = async (req, res, next) => {
 const getUrlStats = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
+    const cacheKey = `url_stats_${shortCode}`;
 
-    const url = await Url.findOne({ shortCode });
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
+    const url = await Url.findOne({ shortCode })
+      .select('longUrl shortCode clicks isActive expiresAt createdAt lastClickedAt')
+      .lean();
     if (!url) {
       return res.status(404).json({
         success: false,
@@ -317,8 +389,9 @@ const getUrlStats = async (req, res, next) => {
     }
 
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const isExpired = url.expiresAt && new Date(url.expiresAt) <= new Date();
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: {
         longUrl: url.longUrl,
@@ -326,12 +399,16 @@ const getUrlStats = async (req, res, next) => {
         shortCode: url.shortCode,
         clicks: url.clicks,
         isActive: url.isActive,
-        isExpired: url.isExpired(),
+        isExpired,
         expiresAt: url.expiresAt,
         createdAt: url.createdAt,
         lastClickedAt: url.lastClickedAt,
       },
-    });
+    };
+
+    setCache(cacheKey, responseData, 30);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -376,6 +453,18 @@ const deleteUrl = async (req, res, next) => {
     }
 
     await Url.findOneAndDelete({ shortCode });
+
+    // Clear caches
+    deleteCache(`redirect_${shortCode}`);
+    deleteCache(`url_stats_${shortCode}`);
+    deleteCache(`url_analytics_${shortCode}`);
+    if (req.user) {
+      deleteCache(`urls_user_${req.user._id}`);
+      deleteCache(`analytics_dashboard_${req.user._id}`);
+    } else {
+      // For guest delete, we can clear all guest urls caches or let them TTL out
+      // Since guest can delete a URL, we will clear their guest urls list if codes list changes
+    }
 
     res.status(200).json({
       success: true,

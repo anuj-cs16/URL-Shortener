@@ -375,6 +375,25 @@ const startClearExpiredBlockedIpsJob = () => {
 };
 
 /**
+ * JOB 6: Daily Database Cleanup
+ * Cron schedule: Every day at midnight (0 0 * * *)
+ */
+const startDatabaseCleanupJob = () => {
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[Cron Job]: Starting database cleanup process...');
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const result = await Url.deleteMany({
+        expiresAt: { $lt: thirtyDaysAgo }
+      });
+      console.log(`[Cron Job]: Database cleanup complete. Purged ${result.deletedCount} URLs expired > 30 days.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Database cleanup failed: ${error.message}`);
+    }
+  });
+};
+
+/**
  * Initializes and triggers scheduled node-cron tasks.
  */
 const initScheduledJobs = () => {
@@ -387,6 +406,7 @@ const initScheduledJobs = () => {
   startExpiryProcessorJob();
   startMilestoneJob();
   startClearExpiredBlockedIpsJob();
+  startDatabaseCleanupJob();
   console.log('✅ Cron Jobs initialized successfully');
 };
 

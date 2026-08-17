@@ -12,6 +12,7 @@
 const moment = require('moment');
 const Click = require('../models/Click');
 const Url = require('../models/Url');
+const { getCache, setCache } = require('../utils/cache');
 
 /**
  * Retrieves aggregate statistics for the user's dashboard.
@@ -21,6 +22,22 @@ const Url = require('../models/Url');
 const getDashboardStats = async (req, res, next) => {
   try {
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `analytics_dashboard_${req.user._id}`;
+    } else if (codes) {
+      cacheKey = `analytics_dashboard_guest_${codes}`;
+    } else {
+      cacheKey = `analytics_dashboard_guest_empty`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let query = { _id: { $in: [] } };
     let clickQuery = { urlId: { $in: [] } };
 
@@ -29,7 +46,7 @@ const getDashboardStats = async (req, res, next) => {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       query = { _id: { $in: urlIds } };
       clickQuery = { urlId: { $in: urlIds } };
@@ -51,15 +68,15 @@ const getDashboardStats = async (req, res, next) => {
       Click.countDocuments(clickQuery),
       Url.countDocuments({ ...query, createdAt: { $gte: startOfMonth } }),
       Click.countDocuments({ ...clickQuery, clickedAt: { $gte: startOfMonth } }),
-      Url.findOne(query).sort({ clicks: -1 }),
-      Url.findOne(query).sort({ createdAt: -1 }),
+      Url.findOne(query).sort({ clicks: -1 }).select('shortCode longUrl clicks').lean(),
+      Url.findOne(query).sort({ createdAt: -1 }).select('shortCode longUrl createdAt').lean(),
       Url.countDocuments({ ...query, expiresAt: { $gt: new Date() } }),
-      Click.find(clickQuery).sort({ clickedAt: -1 }).limit(20),
+      Click.find(clickQuery).sort({ clickedAt: -1 }).limit(20).select('shortCode country countryCode city browser deviceType referrer clickedAt').lean(),
     ]);
 
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: {
         totalUrls,
@@ -95,28 +112,43 @@ const getDashboardStats = async (req, res, next) => {
           clickedAt: click.clickedAt,
         })),
       },
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Retrieves clicks count grouped by day for a selected date range.
- * @route   GET /api/analytics/clicks-over-time
- * @returns {Promise<void>}
- */
 const getClicksOverTime = async (req, res, next) => {
   try {
     const days = parseInt(req.query.days) || 7;
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `clicks_time_${req.user._id}_${days}`;
+    } else if (codes) {
+      cacheKey = `clicks_time_guest_${codes}_${days}`;
+    } else {
+      cacheKey = `clicks_time_guest_empty_${days}`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let clickQuery = { urlId: { $in: [] } };
 
     if (req.user) {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       clickQuery = { urlId: { $in: urlIds } };
     }
@@ -126,7 +158,7 @@ const getClicksOverTime = async (req, res, next) => {
     const clicks = await Click.find({
       ...clickQuery,
       clickedAt: { $gte: startDate.toDate() },
-    });
+    }).select('clickedAt').lean();
 
     const clicksMap = {};
     clicks.forEach((click) => {
@@ -143,10 +175,14 @@ const getClicksOverTime = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -160,18 +196,34 @@ const getClicksOverTime = async (req, res, next) => {
 const getDeviceStats = async (req, res, next) => {
   try {
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `devices_${req.user._id}`;
+    } else if (codes) {
+      cacheKey = `devices_guest_${codes}`;
+    } else {
+      cacheKey = `devices_guest_empty`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let clickQuery = { urlId: { $in: [] } };
 
     if (req.user) {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       clickQuery = { urlId: { $in: urlIds } };
     }
 
-    const clicks = await Click.find(clickQuery);
+    const clicks = await Click.find(clickQuery).select('deviceType').lean();
     const total = clicks.length;
 
     const counts = { desktop: 0, mobile: 0, tablet: 0, unknown: 0 };
@@ -191,35 +243,50 @@ const getDeviceStats = async (req, res, next) => {
       data[key] = { count, percentage };
     });
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Retrieves browser clicks metrics.
- * @route   GET /api/analytics/browsers
- * @returns {Promise<void>}
- */
 const getBrowserStats = async (req, res, next) => {
   try {
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `browsers_${req.user._id}`;
+    } else if (codes) {
+      cacheKey = `browsers_guest_${codes}`;
+    } else {
+      cacheKey = `browsers_guest_empty`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let clickQuery = { urlId: { $in: [] } };
 
     if (req.user) {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       clickQuery = { urlId: { $in: urlIds } };
     }
 
-    const clicks = await Click.find(clickQuery);
+    const clicks = await Click.find(clickQuery).select('browser').lean();
     const total = clicks.length;
 
     const browserCounts = {};
@@ -237,10 +304,14 @@ const getBrowserStats = async (req, res, next) => {
     list.sort((a, b) => b.count - a.count);
     const topBrowsers = list.slice(0, 6);
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: topBrowsers,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -254,18 +325,34 @@ const getBrowserStats = async (req, res, next) => {
 const getCountryStats = async (req, res, next) => {
   try {
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `countries_${req.user._id}`;
+    } else if (codes) {
+      cacheKey = `countries_guest_${codes}`;
+    } else {
+      cacheKey = `countries_guest_empty`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let clickQuery = { urlId: { $in: [] } };
 
     if (req.user) {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       clickQuery = { urlId: { $in: urlIds } };
     }
 
-    const clicks = await Click.find(clickQuery);
+    const clicks = await Click.find(clickQuery).select('country countryCode').lean();
     const total = clicks.length;
 
     const countryCounts = {};
@@ -290,24 +377,31 @@ const getCountryStats = async (req, res, next) => {
     list.sort((a, b) => b.count - a.count);
     const topCountries = list.slice(0, 10);
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: topCountries,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Retrieves analytics breakdown logs for a single URL.
- * @route   GET /api/analytics/url/:shortCode
- * @returns {Promise<void>}
- */
 const getUrlAnalytics = async (req, res, next) => {
   try {
     const { shortCode } = req.params;
-    const url = await Url.findOne({ shortCode });
+    const cacheKey = `url_analytics_${shortCode}`;
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
+    const url = await Url.findOne({ shortCode }).select('longUrl shortCode clicks createdAt expiresAt userId').lean();
     if (!url) {
       return res.status(404).json({
         success: false,
@@ -315,8 +409,10 @@ const getUrlAnalytics = async (req, res, next) => {
       });
     }
 
-
-    const clicks = await Click.find({ urlId: url._id }).sort({ clickedAt: -1 });
+    const clicks = await Click.find({ urlId: url._id })
+      .sort({ clickedAt: -1 })
+      .select('clickedAt deviceType browser country countryCode referrer ipAddress city operatingSystem')
+      .lean();
     const total = clicks.length;
 
     // 1. Clicks Over Time (Last 7 Days)
@@ -417,7 +513,7 @@ const getUrlAnalytics = async (req, res, next) => {
 
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: {
         url: {
@@ -435,21 +531,35 @@ const getUrlAnalytics = async (req, res, next) => {
         referrerBreakdown,
         recentClicks,
       },
-    });
+    };
+
+    setCache(cacheKey, responseData, 30);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Retrieves the top clicked URLs for the authenticated user.
- * @route   GET /api/analytics/top-urls
- * @returns {Promise<void>}
- */
 const getTopUrls = async (req, res, next) => {
   try {
     const { codes } = req.query;
     const limit = parseInt(req.query.limit) || 5;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `top_urls_${req.user._id}_${limit}`;
+    } else if (codes) {
+      cacheKey = `top_urls_guest_${codes}_${limit}`;
+    } else {
+      cacheKey = `top_urls_guest_empty_${limit}`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
 
     let query = { _id: { $in: [] } };
     if (req.user) {
@@ -459,7 +569,11 @@ const getTopUrls = async (req, res, next) => {
       query = { shortCode: { $in: codesArray } };
     }
 
-    const urls = await Url.find(query).sort({ clicks: -1 }).limit(limit);
+    const urls = await Url.find(query)
+      .sort({ clicks: -1 })
+      .limit(limit)
+      .select('shortCode longUrl clicks createdAt')
+      .lean();
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
 
     const data = urls.map((url) => ({
@@ -470,10 +584,14 @@ const getTopUrls = async (req, res, next) => {
       createdAt: url.createdAt,
     }));
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -487,18 +605,34 @@ const getTopUrls = async (req, res, next) => {
 const getReferrerStats = async (req, res, next) => {
   try {
     const { codes } = req.query;
+    let cacheKey = '';
+
+    if (req.user) {
+      cacheKey = `referrers_${req.user._id}`;
+    } else if (codes) {
+      cacheKey = `referrers_guest_${codes}`;
+    } else {
+      cacheKey = `referrers_guest_empty`;
+    }
+
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
+
     let clickQuery = { urlId: { $in: [] } };
 
     if (req.user) {
       clickQuery = { userId: req.user._id };
     } else if (codes) {
       const codesArray = codes.split(',');
-      const urls = await Url.find({ shortCode: { $in: codesArray } });
+      const urls = await Url.find({ shortCode: { $in: codesArray } }).select('_id').lean();
       const urlIds = urls.map(u => u._id);
       clickQuery = { urlId: { $in: urlIds } };
     }
 
-    const clicks = await Click.find(clickQuery);
+    const clicks = await Click.find(clickQuery).select('referrer').lean();
     const total = clicks.length;
 
     const referrerCounts = {};
@@ -515,10 +649,14 @@ const getReferrerStats = async (req, res, next) => {
 
     list.sort((a, b) => b.count - a.count);
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       data: list,
-    });
+    };
+
+    setCache(cacheKey, responseData, 300);
+    res.setHeader('X-Cache', 'MISS');
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
