@@ -13,6 +13,8 @@ const Url = require('../models/Url');
 const EmailSettings = require('../models/EmailSettings');
 const Notification = require('../models/Notification');
 const LoginActivity = require('../models/LoginActivity');
+const Subscription = require('../models/Subscription');
+const { getCurrentUsage } = require('../middleware/usageLimiter');
 const emailService = require('../utils/emailService');
 const { getClientIP, getLocationInfo, getBrowserInfo, getDeviceType, getOSInfo } = require('../utils/analyticsHelper');
 
@@ -49,6 +51,11 @@ const sendTokenResponse = (user, statusCode, message, res) => {
         totalUrlsCreated: user.totalUrlsCreated,
         createdAt: user.createdAt,
         lastLoginAt: user.lastLoginAt,
+        planId: user.planId,
+        stripeCustomerId: user.stripeCustomerId,
+        isLifetimeMember: user.isLifetimeMember,
+        referralCode: user.referralCode,
+        trialUsed: user.trialUsed,
       },
       token,
     },
@@ -80,12 +87,34 @@ const register = async (req, res, next) => {
       });
     }
 
+    // Handle referral code generation and lookup
+    const referralCode = require('crypto').randomBytes(4).toString('hex');
+    let referredBy = null;
+    if (req.body.referredBy) {
+      const referrer = await User.findOne({ referralCode: req.body.referredBy.toLowerCase() });
+      if (referrer) {
+        referredBy = referrer._id;
+      }
+    }
+
     // Create user in database
     const user = await User.create({
       name,
       email,
       password,
+      referralCode,
+      referredBy,
     });
+
+    // Create default Free Subscription
+    await Subscription.create({
+      userId: user._id,
+      planId: 'free',
+      status: 'free',
+    });
+
+    // Initialize usage record
+    await getCurrentUsage(user._id);
 
     // Create default EmailSettings for user
     await EmailSettings.create({ userId: user._id });
@@ -408,6 +437,11 @@ const getMe = async (req, res, next) => {
           totalUrlsCreated,
           createdAt: req.user.createdAt,
           lastLoginAt: req.user.lastLoginAt,
+          planId: req.user.planId,
+          stripeCustomerId: req.user.stripeCustomerId,
+          isLifetimeMember: req.user.isLifetimeMember,
+          referralCode: req.user.referralCode,
+          trialUsed: req.user.trialUsed,
         },
       },
     });

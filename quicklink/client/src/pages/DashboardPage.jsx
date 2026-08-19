@@ -11,14 +11,20 @@
  * @created    2026-08-12
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useUrls } from '../hooks/useUrls';
+import { useSubscription } from '../hooks/useSubscription';
 import * as authApi from '../api/authApi';
 import UrlForm from '../components/url/UrlForm';
 import UrlResult from '../components/url/UrlResult';
 import UrlTable from '../components/url/UrlTable';
+import PlanBadge from '../components/subscription/PlanBadge';
+import UsageBar from '../components/subscription/UsageBar';
+import UpgradePrompt from '../components/subscription/UpgradePrompt';
+import axiosInstance from '../api/axiosConfig';
 import { FiMail, FiCalendar, FiLink, FiActivity, FiX } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import SEOHead from '../components/seo/SEOHead';
@@ -26,7 +32,46 @@ import SEOHead from '../components/seo/SEOHead';
 const DashboardPage = () => {
   const { user, updateUser } = useAuth();
   const { urls, isLoading, shorten, remove } = useUrls();
+  const { subscription, usage, fetchCurrentSubscription } = useSubscription();
   const [shortenedData, setShortenedData] = useState(null);
+
+  // Bulk States
+  const [bulkText, setBulkText] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResults, setBulkResults] = useState(null);
+
+  useEffect(() => {
+    fetchCurrentSubscription();
+  }, [fetchCurrentSubscription]);
+
+  const handleBulkShorten = async () => {
+    const urlsArray = bulkText
+      .split('\n')
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0);
+
+    if (urlsArray.length === 0) {
+      toast.error('Please enter at least one URL');
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const response = await axiosInstance.post('/api/bulk-shorten', { urls: urlsArray });
+      if (response.data?.success) {
+        setBulkResults(response.data.data);
+        setBulkText('');
+        toast.success('Bulk shortening completed successfully!');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Bulk shortening failed');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   // Modal display states
   const [editOpen, setEditOpen] = useState(false);
@@ -115,10 +160,114 @@ const DashboardPage = () => {
         {/* Left Column: Shortener and URL Grid */}
       <main className="dashboard-main-content">
         <h1 className="dashboard-title">My Links Dashboard</h1>
-        <UrlForm onSubmit={handleShortenSubmit} isLoading={isLoading} />
+        <UrlForm 
+          onSubmit={handleShortenSubmit} 
+          isLoading={isLoading} 
+          planId={subscription?.planId}
+          urlsCreated={usage?.urlsCreated?.used || 0}
+          urlsLimit={usage?.urlsCreated?.limit || 10}
+        />
         {shortenedData && <UrlResult urlData={shortenedData} />}
         
+        {/* Bulk URL shortening section (restricted to Pro+) */}
+        {(subscription?.planId === 'pro' || subscription?.planId === 'business') ? (
+          <div className="glass-card bulk-shortener-card" style={{ marginTop: '30px', padding: '24px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⚡ Bulk URL Shortener
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              Enter up to 50 URLs (one per line) to shorten them all at once.
+            </p>
+            <textarea
+              className="form-input"
+              rows={6}
+              style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical', padding: '12px', marginBottom: '16px' }}
+              placeholder="https://example.com/one&#10;https://example.com/two&#10;https://example.com/three"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              disabled={bulkLoading}
+            />
+            <button 
+              className="btn btn-primary"
+              onClick={handleBulkShorten}
+              disabled={bulkLoading || !bulkText.trim()}
+              style={{ width: '100%' }}
+            >
+              {bulkLoading ? 'Processing Bulk Order...' : '⚡ Shorten All URLs'}
+            </button>
+
+            {bulkResults && (
+              <div style={{ marginTop: '20px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '8px' }}>
+                  Bulk Results ({bulkResults.successCount} succeeded, {bulkResults.failCount} failed)
+                </h3>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead style={{ background: 'var(--card-border)', position: 'sticky', top: 0 }}>
+                      <tr>
+                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>Original URL</th>
+                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>Short URL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkResults.results.map((res, index) => (
+                        <tr key={index} style={{ borderBottom: '1px solid var(--card-border)' }}>
+                          <td style={{ padding: '8px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{res.longUrl}</td>
+                          <td style={{ padding: '8px', wordBreak: 'break-all' }}>
+                            {res.success ? (
+                              <a href={res.shortUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--secondary)' }}>
+                                {res.shortUrl}
+                              </a>
+                            ) : (
+                              <span style={{ color: 'var(--error)' }}>✕ {res.error}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="glass-card bulk-shortener-card" style={{ marginTop: '30px', padding: '24px', opacity: 0.8 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🔒 Bulk URL Shortener
+            </h2>
+            <UpgradePrompt 
+              feature="Bulk URL Shortening" 
+              requiredPlan="Pro" 
+              message="Shorten up to 50 links in a single command. Upgrade to Pro or Business to unlock." 
+            />
+          </div>
+        )}
+
         <div style={{ marginTop: '30px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>My Shortened Links</h2>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {(subscription?.planId === 'pro' || subscription?.planId === 'business') ? (
+                <>
+                  <a href="/api/export/urls/csv" className="btn btn-outline" style={{ height: '36px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
+                    📥 Export URLs (CSV)
+                  </a>
+                  <a href="/api/export/analytics/csv" className="btn btn-outline" style={{ height: '36px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
+                    📈 Export Clicks (CSV)
+                  </a>
+                </>
+              ) : (
+                <button 
+                  className="btn btn-outline" 
+                  style={{ height: '36px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.6 }}
+                  onClick={() => toast.error('Exporting data requires a Pro or Business subscription.')}
+                >
+                  🔒 Export Data (Pro)
+                </button>
+              )}
+            </div>
+          </div>
           <UrlTable urls={urls} isLoading={isLoading} onDelete={remove} />
         </div>
       </main>
@@ -130,9 +279,36 @@ const DashboardPage = () => {
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <h2 className="profile-name-txt">{user?.name}</h2>
-          <p className="profile-role-txt">{user?.role === 'admin' ? 'Administrator' : 'Premium Creator'}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
+            <p className="profile-role-txt" style={{ margin: 0 }}>{user?.role === 'admin' ? 'Administrator' : 'Creator'}</p>
+            <PlanBadge planId={user?.planId} size="md" />
+          </div>
           
           <div className="divider" style={{ margin: '16px 0' }} />
+
+          {/* Usage bars */}
+          {usage && (
+            <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+              <UsageBar 
+                label="URLs Created" 
+                used={usage.urlsCreated.used} 
+                limit={usage.urlsCreated.limit} 
+                icon="🔗" 
+              />
+              <UsageBar 
+                label="Clicks Tracked" 
+                used={usage.clicksReceived.used} 
+                limit={usage.clicksReceived.limit} 
+                icon="📊" 
+              />
+              {subscription?.planId === 'free' && (
+                <Link to="/pricing" style={{ fontSize: '0.82rem', color: 'var(--primary)', textAlign: 'center', textDecoration: 'none', fontWeight: 600 }}>
+                  ⚡ Upgrade to Pro for more limits
+                </Link>
+              )}
+              <div className="divider" style={{ margin: '16px 0' }} />
+            </div>
+          )}
 
           <div className="profile-meta-list">
             <div className="profile-meta-item">

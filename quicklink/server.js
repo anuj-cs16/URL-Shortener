@@ -59,6 +59,8 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+app.locals.plans = require('./config/plans');
+
 // Trust proxy for rate limiting on Cloud Run
 app.set('trust proxy', 1);
 
@@ -98,6 +100,14 @@ app.use(helmet({
 }));
 
 app.use(cors());
+
+// Stripe Webhook needs raw body parsed BEFORE express.json()
+app.use(
+  '/api/subscription/webhook',
+  express.raw({ type: 'application/json' }),
+  require('./routes/subscriptionRoutes')
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -203,6 +213,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+app.use('/api/bulk-shorten', require('./routes/bulkRoutes'));
+app.use('/api/export', require('./routes/exportRoutes'));
 app.use('/', urlRoutes);
 
 // Serve React SPA catch-all in production (after API routes)

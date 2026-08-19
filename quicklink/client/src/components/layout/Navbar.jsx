@@ -15,8 +15,9 @@ import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiSettings, FiLogOut, FiLayout, FiActivity } from 'react-icons/fi';
+import { FiMenu, FiX, FiSettings, FiLogOut, FiLayout, FiActivity, FiCreditCard } from 'react-icons/fi';
 import NotificationBell from '../notifications/NotificationBell';
+import PlanBadge from '../subscription/PlanBadge';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -45,6 +46,7 @@ const Navbar = () => {
         {/* Center Section: Navigation Links (Desktop) */}
         <div className="navbar-links-desktop">
           <NavLink to="/" className={navLinkClass}>Home</NavLink>
+          <NavLink to="/pricing" className={navLinkClass}>Pricing</NavLink>
           {isAuthenticated && (
             <>
               <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
@@ -81,7 +83,10 @@ const Navbar = () => {
                       transition={{ duration: 0.15 }}
                     >
                       <div className="dropdown-user-info">
-                        <p className="dropdown-user-name">{user?.name}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                          <p className="dropdown-user-name" style={{ margin: 0 }}>{user?.name}</p>
+                          <PlanBadge planId={user?.planId} size="sm" />
+                        </div>
                         <p className="dropdown-user-email">{user?.email}</p>
                       </div>
                       <div className="divider" style={{ margin: '8px 0' }} />
@@ -98,6 +103,13 @@ const Navbar = () => {
                         onClick={() => setDropdownOpen(false)}
                       >
                         <FiActivity /> Notifications
+                      </Link>
+                      <Link
+                        to="/billing"
+                        className="dropdown-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <FiCreditCard /> Billing & Usage
                       </Link>
                       <Link
                         to="/settings/notifications"
@@ -159,10 +171,12 @@ const Navbar = () => {
           >
             <div className="mobile-drawer-links">
               <NavLink to="/" className={navLinkClass} onClick={() => setIsOpen(false)}>Home</NavLink>
+              <NavLink to="/pricing" className={navLinkClass} onClick={() => setIsOpen(false)}>Pricing</NavLink>
               {isAuthenticated ? (
                 <>
                   <NavLink to="/dashboard" className={navLinkClass} onClick={() => setIsOpen(false)}>Dashboard</NavLink>
                   <NavLink to="/analytics" className={navLinkClass} onClick={() => setIsOpen(false)}>Analytics</NavLink>
+                  <NavLink to="/billing" className={navLinkClass} onClick={() => setIsOpen(false)}>Billing & Usage</NavLink>
                   <NavLink to="/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Notifications</NavLink>
                   <NavLink to="/settings/notifications" className={navLinkClass} onClick={() => setIsOpen(false)}>Notification Settings</NavLink>
                   <NavLink to="/settings/security" className={navLinkClass} onClick={() => setIsOpen(false)}>Security Settings</NavLink>

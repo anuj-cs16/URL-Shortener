@@ -110,6 +110,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: () => require('crypto').randomBytes(32).toString('hex'),
   },
+  planId: {
+    type: String,
+    enum: ['free', 'pro', 'business'],
+    default: 'free',
+  },
+  stripeCustomerId: {
+    type: String,
+    default: null,
+  },
+  isLifetimeMember: {
+    type: Boolean,
+    default: false,
+  },
+  referralCode: {
+    type: String,
+    default: null,
+    unique: true,
+    sparse: true,
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  trialUsed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 /**

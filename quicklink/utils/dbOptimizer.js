@@ -23,7 +23,7 @@ const ensureIndexes = async () => {
     await Url.collection.createIndex({ shortCode: 1 }, { unique: true });
     await Url.collection.createIndex({ userId: 1 });
     await Url.collection.createIndex({ createdAt: -1 });
-    await Url.collection.createIndex({ expiresAt: 1 });
+    await Url.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     await Url.collection.createIndex({ isActive: 1 });
 
     // Click schema indexes

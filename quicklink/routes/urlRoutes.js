@@ -25,9 +25,10 @@ const {
 const validateUrl = require('../middleware/validateUrl');
 const rateLimiter = require('../middleware/rateLimiter');
 const { optionalAuth } = require('../middleware/auth');
+const { checkUrlLimit, checkCustomCodeAllowed, incrementUrlUsage } = require('../middleware/usageLimiter');
 
 // Create shortened URL endpoint (with rate limiter and format validator)
-router.post('/api/shorten', rateLimiter, optionalAuth, validateUrl, createShortUrl);
+router.post('/api/shorten', rateLimiter, optionalAuth, validateUrl, checkUrlLimit, checkCustomCodeAllowed, incrementUrlUsage, createShortUrl);
 
 // Retrieve URL collection history endpoint
 router.get('/api/urls', optionalAuth, getAllUrls);

@@ -1,0 +1,36 @@
+<h1>Payment Confirmed ✅</h1>
+<p>Hello {{name}},</p>
+<p>Thank you for your payment. This email serves as your receipt for your subscription to <strong>QuickLink {{planName}}</strong>.</p>
+
+<div class="stat-box">
+  <p style="margin: 0; font-weight: bold; color: white;">Invoice details</p>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; color: #A0A0B0;">
+    {{#if invoiceNumber}}
+    <tr>
+      <td style="padding: 4px 0;">Invoice Number:</td>
+      <td style="padding: 4px 0; text-align: right; color: white;">{{invoiceNumber}}</td>
+    </tr>
+    {{/if}}
+    <tr>
+      <td style="padding: 4px 0;">Amount Paid:</td>
+      <td style="padding: 4px 0; text-align: right; color: #3ECFCF; font-weight: bold;">{{amount}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0;">Payment Date:</td>
+      <td style="padding: 4px 0; text-align: right; color: white;">{{paymentDate}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0;">Billing Cycle:</td>
+      <td style="padding: 4px 0; text-align: right; color: white;">{{periodStart}} - {{periodEnd}}</td>
+    </tr>
+  </table>
+</div>
+
+{{#if receiptUrl}}
+<div style="text-align: center;">
+  <a href="{{receiptUrl}}" class="btn">View Printable Invoice ↗</a>
+</div>
+{{/if}}
+
+<p style="margin-top: 24px;">You can view your complete payment history or update your credit card details at any time on your <a href="{{appUrl}}/billing" style="color: #6C63FF; text-decoration: none;">Billing & Usage Page</a>.</p>
+<p>Best regards,<br>The QuickLink Team</p>

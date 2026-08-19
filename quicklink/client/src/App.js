@@ -32,6 +32,9 @@ import NotificationsPage from './pages/NotificationsPage';
 import EmailSettingsPage from './pages/EmailSettingsPage';
 import VerifyTwoFactorPage from './pages/VerifyTwoFactorPage';
 import SecurityPage from './pages/SecurityPage';
+import PricingPage from './pages/PricingPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import BillingPage from './pages/BillingPage';
 
 // Route guards & utilities
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -52,6 +55,7 @@ function App() {
               <Routes>
                 {/* Guest & Public routes */}
                 <Route path="/" element={<HomePage />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 
                 <Route
                   path="/login"
@@ -116,6 +120,22 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <SecurityPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/payment/success"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentSuccessPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/billing"
+                  element={
+                    <ProtectedRoute>
+                      <BillingPage />
                     </ProtectedRoute>
                   }
                 />

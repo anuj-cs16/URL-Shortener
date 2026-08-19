@@ -38,7 +38,7 @@ const {
  */
 const createShortUrl = async (req, res, next) => {
   try {
-    const { longUrl, customCode } = req.body;
+    const { longUrl, customCode, urlPassword } = req.body;
     let shortCode = '';
 
     // Check if custom code is provided
@@ -66,12 +66,26 @@ const createShortUrl = async (req, res, next) => {
       shortCode = await generateShortCode();
     }
 
+    // Hash password if Pro/Business and provided
+    let hashedUrlPassword = null;
+    if (urlPassword && req.user) {
+      const Subscription = require('../models/Subscription');
+      const sub = await Subscription.findOne({ userId: req.user._id });
+      const planId = sub ? sub.planId : 'free';
+      if (planId === 'pro' || planId === 'business') {
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        hashedUrlPassword = await bcrypt.hash(urlPassword, salt);
+      }
+    }
+
     // Save URL document to database
     const newUrl = new Url({
       longUrl,
       shortCode,
       customCode: customCode || null,
       userId: req.user ? req.user._id : null,
+      urlPassword: hashedUrlPassword,
     });
     await newUrl.save();
 
@@ -124,6 +138,7 @@ const createShortUrl = async (req, res, next) => {
         qrCode: qrCodeDataUrl,
         expiresAt: newUrl.expiresAt,
         clicks: newUrl.clicks,
+        isPasswordProtected: !!newUrl.urlPassword,
       },
       message: 'Short URL created successfully',
     });
@@ -177,6 +192,33 @@ const redirectToLongUrl = async (req, res, next) => {
       });
     }
 
+    // Check if URL is password protected
+    if (url.urlPassword) {
+      const password = req.body.urlPassword || req.query.password || req.headers['x-url-password'];
+      if (!password) {
+        if (acceptsHtml) {
+          return res.status(200).sendFile(path.join(__dirname, '..', 'public', 'password.html'));
+        }
+        return res.status(401).json({
+          success: false,
+          requiresPassword: true,
+          message: 'Password required',
+        });
+      }
+
+      const bcrypt = require('bcryptjs');
+      const isMatch = await bcrypt.compare(password, url.urlPassword);
+      if (!isMatch) {
+        if (acceptsHtml) {
+          return res.redirect(`/${shortCode}?error=1`);
+        }
+        return res.status(403).json({
+          success: false,
+          message: 'Invalid password',
+        });
+      }
+    }
+
     // Capture analytical parameters
     const userAgent = req.headers['user-agent'] || '';
     const ip = getClientIP(req);
@@ -203,7 +245,13 @@ const redirectToLongUrl = async (req, res, next) => {
       referrer: referrer,
       clickedAt: new Date(),
     });
-    click.save().catch((err) => console.error(`Failed to save click record: ${err.message}`));
+    await click.save();
+
+    // Increment click usage under premium limits
+    if (url.userId) {
+      const { incrementClickUsage } = require('../middleware/usageLimiter');
+      await incrementClickUsage(url.userId);
+    }
 
     // Invalidate stats/analytics cache on click
     deleteCache(`url_stats_${shortCode}`);
@@ -221,14 +269,14 @@ const redirectToLongUrl = async (req, res, next) => {
       deleteCache(`top_urls_${userIdStr}_10`);
     }
 
-    // Increment click tracking parameters on original URL doc (asynchronous write)
-    Url.updateOne({ _id: url._id }, { $inc: { clicks: 1 }, $set: { lastClickedAt: new Date() } })
-      .then(async () => {
-        // Check click milestones in background
-        if (url.userId) {
-          const milestones = [10, 50, 100, 500, 1000, 5000];
-          // Since we incremented by 1, we can query current click count
-          const currentUrl = await Url.findById(url._id).select('clicks userId shortCode milestonesReached').lean();
+    // Increment click tracking parameters on original URL doc (synchronous write before redirect)
+    await Url.updateOne({ _id: url._id }, { $inc: { clicks: 1 }, $set: { lastClickedAt: new Date() } });
+
+    // Check click milestones in background (non-blocking)
+    if (url.userId) {
+      const milestones = [10, 50, 100, 500, 1000, 5000];
+      Url.findById(url._id).select('clicks userId shortCode milestonesReached').lean()
+        .then(async (currentUrl) => {
           if (currentUrl) {
             const reachedMilestone = milestones.find((m) => currentUrl.clicks === m && !currentUrl.milestonesReached.includes(m));
             if (reachedMilestone) {
@@ -259,9 +307,9 @@ const redirectToLongUrl = async (req, res, next) => {
               await Url.updateOne({ _id: url._id }, { $push: { milestonesReached: reachedMilestone } });
             }
           }
-        }
-      })
-      .catch((err) => console.error(`Failed to update click count on URL: ${err.message}`));
+        })
+        .catch((err) => console.error(`Failed to check milestones: ${err.message}`));
+    }
 
     // Perform permanent redirect (301)
     res.redirect(301, url.longUrl);

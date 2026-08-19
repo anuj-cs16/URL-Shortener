@@ -58,6 +58,10 @@ const urlSchema = new mongoose.Schema({
     type: [Number],
     default: [],
   },
+  urlPassword: {
+    type: String,
+    default: null,
+  },
 });
 
 // Add index on createdAt

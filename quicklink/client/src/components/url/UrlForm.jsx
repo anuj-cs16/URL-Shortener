@@ -13,12 +13,15 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLink, FiClipboard, FiZap, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import LoadingSpinner from '../common/LoadingSpinner';
+import UpgradePrompt from '../subscription/UpgradePrompt';
 
-const UrlForm = ({ onSubmit, isLoading }) => {
+const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLimit = 10 }) => {
   const [longUrl, setLongUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const [error, setError] = useState('');
+
+  const isFree = planId === 'free';
 
   // Checks URL format protocol
   const validateInputUrl = (url) => {
@@ -39,7 +42,7 @@ const UrlForm = ({ onSubmit, isLoading }) => {
       return;
     }
     setError('');
-    onSubmit(longUrl, showCustom ? customCode : '');
+    onSubmit(longUrl, showCustom && !isFree ? customCode : '');
   };
 
   const handlePaste = async () => {
@@ -104,7 +107,7 @@ const UrlForm = ({ onSubmit, isLoading }) => {
           disabled={isLoading}
         >
           {showCustom ? <FiChevronUp /> : <FiChevronDown />}
-          <span>Configure Custom Short Code Alias</span>
+          <span>Configure Custom Short Code Alias {isFree && '🔒'}</span>
         </button>
       </div>
 
@@ -118,20 +121,38 @@ const UrlForm = ({ onSubmit, isLoading }) => {
             transition={{ duration: 0.2 }}
           >
             <div style={{ paddingTop: '12px' }}>
-              <label className="input-label-tag">Custom Alias (Optional)</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g., my-campaign-link"
-                value={customCode}
-                onChange={(e) => setCustomCode(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-                disabled={isLoading}
-              />
-              <span className="input-hint-info">Letters, numbers, hyphens, and underscores only.</span>
+              {isFree ? (
+                <div style={{ padding: '8px 0' }}>
+                  <UpgradePrompt
+                    feature="Custom Short Codes"
+                    requiredPlan="Pro"
+                    message="Custom short code aliases are a premium feature. Upgrade to a paid plan to use them."
+                  />
+                </div>
+              ) : (
+                <>
+                  <label className="input-label-tag">Custom Alias (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., my-campaign-link"
+                    value={customCode}
+                    onChange={(e) => setCustomCode(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                    disabled={isLoading}
+                  />
+                  <span className="input-hint-info">Letters, numbers, hyphens, and underscores only.</span>
+                </>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {urlsLimit !== -1 && (
+        <div className="url-form-usage-hint" style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+          💡 {urlsCreated} of {urlsLimit} URLs used this month
+        </div>
+      )}
 
       <div style={{ marginTop: '20px' }}>
         <button

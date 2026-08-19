@@ -433,6 +433,101 @@ const sendAccountLockedEmail = async (user, lockUntil, ipAddress) => {
   });
 };
 
+const sendSubscriptionWelcomeEmail = async (user, planName) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: `Welcome to QuickLink ${planName.toUpperCase()}! 🎉`,
+    template: 'subscription-welcome',
+    context: {
+      name: user.name,
+      planName: planName.toUpperCase(),
+    },
+  });
+};
+
+const sendPaymentReceiptEmail = async (user, payment) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: 'Payment Confirmed ✅',
+    template: 'payment-receipt',
+    context: {
+      name: user.name,
+      amount: `$${(payment.amount / 100).toFixed(2)}`,
+      planName: payment.planId.toUpperCase(),
+      paymentDate: new Date(payment.paidAt).toLocaleDateString(),
+      periodStart: payment.periodStart ? new Date(payment.periodStart).toLocaleDateString() : '',
+      periodEnd: payment.periodEnd ? new Date(payment.periodEnd).toLocaleDateString() : '',
+      receiptUrl: payment.receiptUrl,
+      invoiceNumber: payment.stripeInvoiceId,
+    },
+  });
+};
+
+const sendPaymentFailedEmail = async (user, payment) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '⚠️ Payment Failed: Action Required',
+    template: 'payment-failed',
+    context: {
+      name: user.name,
+      amount: `$${(payment.amount / 100).toFixed(2)}`,
+      planName: payment.planId.toUpperCase(),
+      failedDate: new Date(payment.paidAt).toLocaleDateString(),
+    },
+  });
+};
+
+const sendSubscriptionCanceledEmail = async (user, sub) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: 'Subscription Canceled ⏳',
+    template: 'subscription-canceled',
+    context: {
+      name: user.name,
+      planName: sub.planId.toUpperCase(),
+      accessUntil: sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : '',
+    },
+  });
+};
+
+const sendTrialEndingEmail = async (user, daysLeft) => {
+  if (!user || !user.email) return false;
+  const Subscription = require('../models/Subscription');
+  const sub = await Subscription.findOne({ userId: user._id });
+  return await sendEmail({
+    to: user.email,
+    subject: `⏰ Trial Ending in ${daysLeft} Days`,
+    template: 'trial-ending',
+    context: {
+      name: user.name,
+      planName: sub ? sub.planId.toUpperCase() : 'PRO',
+      trialEnd: sub && sub.trialEnd ? new Date(sub.trialEnd).toLocaleDateString() : '',
+      daysLeft,
+    },
+  });
+};
+
+const sendUsageLimitWarningEmail = async (user, usageData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: `⚠️ Approaching Usage Limit (${usageData.percentage}%)`,
+    template: 'usage-limit-warning',
+    context: {
+      name: user.name,
+      limitType: usageData.limitType,
+      used: usageData.used,
+      limit: usageData.limit,
+      percentage: usageData.percentage,
+      resetDate: usageData.resetDate ? new Date(usageData.resetDate).toLocaleDateString() : '',
+    },
+  });
+};
+
 module.exports = {
   verifyEmailConnection,
   sendWelcomeEmail,
@@ -447,4 +542,10 @@ module.exports = {
   sendTwoFactorDisabledEmail,
   sendSuspiciousLoginEmail,
   sendAccountLockedEmail,
+  sendSubscriptionWelcomeEmail,
+  sendPaymentReceiptEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionCanceledEmail,
+  sendTrialEndingEmail,
+  sendUsageLimitWarningEmail,
 };

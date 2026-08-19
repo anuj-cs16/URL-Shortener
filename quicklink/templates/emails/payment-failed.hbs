@@ -1,0 +1,30 @@
+<h1>⚠️ Payment Failed</h1>
+<p>Hello {{name}},</p>
+<p>We were unable to process the renewal payment for your <strong>QuickLink {{planName}}</strong> subscription.</p>
+
+<div class="stat-box" style="border-left-color: #FF5252;">
+  <p style="margin: 0; font-weight: bold; color: white;">Transaction Details</p>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; color: #A0A0B0;">
+    <tr>
+      <td style="padding: 4px 0;">Plan:</td>
+      <td style="padding: 4px 0; text-align: right; color: white;">{{planName}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0;">Attempted Amount:</td>
+      <td style="padding: 4px 0; text-align: right; color: #FF5252; font-weight: bold;">{{amount}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0;">Failed Date:</td>
+      <td style="padding: 4px 0; text-align: right; color: white;">{{failedDate}}</td>
+    </tr>
+  </table>
+</div>
+
+<p><strong>What this means:</strong> Stripe will attempt to retry the charge automatically in a few days. If the payment continues to fail, your account will be downgraded to the Free tier, and some features will be locked.</p>
+
+<div style="text-align: center;">
+  <a href="{{appUrl}}/billing" class="btn" style="background-color: #FF5252;">💳 Update Payment Method Now</a>
+</div>
+
+<p style="margin-top: 24px;">Please update your credit card details to prevent interruptions to your service. If you believe this is an error, please reach out to support.</p>
+<p>Best regards,<br>The QuickLink Team</p>

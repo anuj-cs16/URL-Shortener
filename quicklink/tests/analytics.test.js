@@ -18,6 +18,7 @@ const app = require('../server');
 const User = require('../models/User');
 const Url = require('../models/Url');
 const Click = require('../models/Click');
+const { clearAllCache } = require('../utils/cache');
 
 const TEST_MONGO_URI = 'mongodb://127.0.0.1:27017/quicklink_test';
 
@@ -40,6 +41,7 @@ describe('QuickLink Analytics Dashboard Suite', () => {
   });
 
   beforeEach(async () => {
+    clearAllCache();
     await User.deleteMany({});
     await Url.deleteMany({});
     await Click.deleteMany({});

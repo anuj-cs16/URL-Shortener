@@ -394,6 +394,132 @@ const startDatabaseCleanupJob = () => {
 };
 
 /**
+ * JOB 7: Usage Limit Warning
+ * Cron schedule: Every day at 10:00 AM (0 10 * * *)
+ */
+const startUsageLimitWarningJob = () => {
+  cron.schedule('0 10 * * *', async () => {
+    console.log('[Cron Job]: Checking usage limit warnings...');
+    try {
+      const Subscription = require('../models/Subscription');
+      const { getCurrentUsage, getPlanLimitsForUser } = require('../middleware/usageLimiter');
+      const { getCache, setCache } = require('./cache');
+
+      const activeSubs = await Subscription.find({ status: { $in: ['active', 'trialing', 'free'] } });
+      let alertCount = 0;
+
+      for (const sub of activeSubs) {
+        const user = await User.findById(sub.userId);
+        if (!user) continue;
+
+        // Check if already sent today
+        const cacheKey = `usage_alert_sent_${user._id}`;
+        if (getCache(cacheKey)) continue;
+
+        const usage = await getCurrentUsage(user._id);
+        const limits = await getPlanLimitsForUser(user._id);
+
+        if (limits.urlsPerMonth !== -1) {
+          const percentage = Math.round((usage.urlsCreated / limits.urlsPerMonth) * 100);
+          if (percentage >= 80) {
+            const usageData = {
+              limitType: 'URLs Created',
+              used: usage.urlsCreated,
+              limit: limits.urlsPerMonth,
+              percentage,
+              resetDate: usage.resetDate,
+            };
+
+            const emailSent = await emailService.sendUsageLimitWarningEmail(user, usageData);
+
+            await Notification.create({
+              userId: user._id,
+              type: 'welcome', // Fallback type compatible with existing DB enum
+              title: 'Usage Limit Warning ⚠️',
+              message: `You have used ${percentage}% of your monthly URL shortenings allowance (${usage.urlsCreated} / ${limits.urlsPerMonth}).`,
+              isEmailSent: emailSent,
+              emailSentAt: emailSent ? new Date() : null,
+              metadata: usageData,
+            });
+
+            setCache(cacheKey, true, 86400); // cache for 1 day
+            alertCount++;
+          }
+        }
+      }
+      console.log(`[Cron Job]: Checked monthly usage, sent ${alertCount} alerts.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Usage limit warning failed: ${error.message}`);
+    }
+  });
+};
+
+/**
+ * JOB 8: Monthly Usage Reset
+ * Cron schedule: First day of month at midnight (0 0 1 * *)
+ */
+const startMonthlyUsageResetJob = () => {
+  cron.schedule('0 0 1 * *', async () => {
+    console.log('[Cron Job]: Resetting monthly usage logs...');
+    try {
+      const { getCurrentUsage } = require('../middleware/usageLimiter');
+      const users = await User.find({ isBanned: false });
+      
+      for (const user of users) {
+        await getCurrentUsage(user._id);
+      }
+      console.log(`[Cron Job]: Successfully reset usage logs for ${users.length} users.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Monthly reset job failed: ${error.message}`);
+    }
+  });
+};
+
+/**
+ * JOB 9: Trial Reminder
+ * Cron schedule: Every day at 9:00 AM (0 9 * * *)
+ */
+const startTrialReminderJob = () => {
+  cron.schedule('0 9 * * *', async () => {
+    console.log('[Cron Job]: Checking trial expiration reminders...');
+    try {
+      const Subscription = require('../models/Subscription');
+      const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const startOfDay = new Date(threeDaysFromNow.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(threeDaysFromNow.setHours(23, 59, 59, 999));
+
+      const trialingSubs = await Subscription.find({
+        status: 'trialing',
+        trialEnd: { $gte: startOfDay, $lte: endOfDay },
+      });
+
+      let reminderCount = 0;
+
+      for (const sub of trialingSubs) {
+        const user = await User.findById(sub.userId);
+        if (!user) continue;
+
+        const emailSent = await emailService.sendTrialEndingEmail(user, 3);
+
+        await Notification.create({
+          userId: user._id,
+          type: 'welcome', // Fallback type compatible with existing DB enum
+          title: 'Free Trial Ending Soon ⏰',
+          message: 'Your 14-day free trial will expire in 3 days. Your credit card will be charged automatically.',
+          isEmailSent: emailSent,
+          emailSentAt: emailSent ? new Date() : null,
+        });
+
+        reminderCount++;
+      }
+      console.log(`[Cron Job]: Trial reminders sent to ${reminderCount} users.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Trial reminders failed: ${error.message}`);
+    }
+  });
+};
+
+/**
  * Initializes and triggers scheduled node-cron tasks.
  */
 const initScheduledJobs = () => {
@@ -407,6 +533,9 @@ const initScheduledJobs = () => {
   startMilestoneJob();
   startClearExpiredBlockedIpsJob();
   startDatabaseCleanupJob();
+  startUsageLimitWarningJob();
+  startMonthlyUsageResetJob();
+  startTrialReminderJob();
   console.log('✅ Cron Jobs initialized successfully');
 };
 
