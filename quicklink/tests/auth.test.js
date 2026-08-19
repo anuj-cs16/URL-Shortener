@@ -15,6 +15,7 @@ const mongoose = require('mongoose');
 const app = require('../server');
 const User = require('../models/User');
 const Url = require('../models/Url');
+const Subscription = require('../models/Subscription');
 
 const TEST_MONGO_URI = 'mongodb://127.0.0.1:27017/quicklink_test';
 
@@ -36,12 +37,14 @@ describe('QuickLink User Authentication Suite', () => {
   beforeEach(async () => {
     await User.deleteMany({});
     await Url.deleteMany({});
+    await Subscription.deleteMany({});
   });
 
   // Close database connections after testing finishes
   afterAll(async () => {
     await User.deleteMany({});
     await Url.deleteMany({});
+    await Subscription.deleteMany({});
     await mongoose.connection.close();
   });
 

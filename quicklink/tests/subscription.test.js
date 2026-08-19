@@ -16,6 +16,33 @@ const PaymentHistory = require('../models/PaymentHistory');
 const Url = require('../models/Url');
 const { clearAllCache } = require('../utils/cache');
 
+jest.mock('stripe', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      subscriptions: {
+        retrieve: jest.fn().mockResolvedValue({
+          status: 'active',
+          current_period_start: Math.floor(Date.now() / 1000),
+          current_period_end: Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000),
+          cancel_at_period_end: false,
+          trial_end: null,
+          items: {
+            data: [{ price: { id: 'price_pro_test_id' } }],
+          },
+        }),
+      },
+      customers: {
+        create: jest.fn().mockResolvedValue({ id: 'cus_mock_123' }),
+      },
+      billingPortal: {
+        sessions: {
+          create: jest.fn().mockResolvedValue({ url: 'https://stripe.com/portal' }),
+        },
+      },
+    };
+  });
+});
+
 const TEST_MONGO_URI = 'mongodb://127.0.0.1:27017/quicklink_test';
 
 describe('QuickLink Subscription & Billing API Suite', () => {
@@ -156,19 +183,6 @@ describe('QuickLink Subscription & Billing API Suite', () => {
         },
       });
 
-      // Mock Stripe SDK getSubscription call
-      const stripe = require('stripe');
-      const spyRetrieve = jest.spyOn(stripe.prototype.subscriptions, 'retrieve').mockImplementation(async () => ({
-        status: 'active',
-        current_period_start: Math.floor(Date.now() / 1000),
-        current_period_end: Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000),
-        cancel_at_period_end: false,
-        trial_end: null,
-        items: {
-          data: [{ price: { id: 'price_pro_test_id' } }],
-        },
-      }));
-
       await request(app)
         .post('/api/subscription/webhook')
         .set('stripe-signature', 'dummy_sig')
@@ -186,8 +200,7 @@ describe('QuickLink Subscription & Billing API Suite', () => {
       expect(sub.status).toBe('active');
       expect(sub.stripeSubscriptionId).toBe('sub_test_123');
 
-      // Clean up mock spy
-      spyRetrieve.mockRestore();
+      // Clean up webhook event override
       stripeService.constructWebhookEvent = originalConstruct;
     });
 
@@ -209,6 +222,7 @@ describe('QuickLink Subscription & Billing API Suite', () => {
       testUser.planId = 'pro';
       await testUser.save();
 
+      await Subscription.deleteOne({ userId: testUser._id });
       await Subscription.create({
         userId: testUser._id,
         planId: 'pro',

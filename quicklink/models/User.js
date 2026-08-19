@@ -125,7 +125,7 @@ const userSchema = new mongoose.Schema({
   },
   referralCode: {
     type: String,
-    default: null,
+    default: () => require('crypto').randomBytes(4).toString('hex'),
     unique: true,
     sparse: true,
   },

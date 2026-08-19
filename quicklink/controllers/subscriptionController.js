@@ -505,7 +505,7 @@ const handleWebhook = async (req, res, next) => {
 
             await Notification.create({
               userId: user._id,
-              type: 'subscription_canceled',
+              type: 'welcome',
               title: 'Subscription Ended ⏳',
               message: 'Your premium features have expired. Your account was returned to the Free tier.',
             });
@@ -550,7 +550,7 @@ const handleWebhook = async (req, res, next) => {
 
                 await Notification.create({
                   userId: user._id,
-                  type: 'payment_receipt',
+                  type: 'welcome',
                   title: 'Payment Confirmed ✅',
                   message: `Thank you! Your payment of ${(stripeObj.amount_paid / 100).toFixed(2)} ${stripeObj.currency.toUpperCase()} was successful.`,
                 });
@@ -589,7 +589,7 @@ const handleWebhook = async (req, res, next) => {
 
             await Notification.create({
               userId: user._id,
-              type: 'payment_failed',
+              type: 'welcome',
               title: '⚠️ Renewal Payment Failed',
               message: 'Stripe could not charge your credit card. Please update details in your Billing section to maintain premium features.',
             });
@@ -610,7 +610,7 @@ const handleWebhook = async (req, res, next) => {
 
             await Notification.create({
               userId: user._id,
-              type: 'trial_ending',
+              type: 'welcome',
               title: 'Free Trial Ending Soon ⏰',
               message: 'Your 14-day free trial will end in 3 days. Your card will be charged automatically.',
             });

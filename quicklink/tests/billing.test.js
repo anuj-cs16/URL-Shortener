@@ -72,6 +72,7 @@ describe('QuickLink Billing History & Features Gating Suite', () => {
         amount: 900,
         currency: 'usd',
         status: 'succeeded',
+        stripePaymentIntentId: 'pi_test_123',
         stripeInvoiceId: 'in_123',
         stripeCustomerId: 'cus_123',
         paidAt: new Date(),
@@ -102,6 +103,7 @@ describe('QuickLink Billing History & Features Gating Suite', () => {
     it('should accept bulk shortening requests on Pro tier', async () => {
       testUser.planId = 'pro';
       await testUser.save();
+      await Subscription.updateOne({ userId: testUser._id }, { planId: 'pro', status: 'active' });
 
       const res = await request(app)
         .post('/api/bulk-shorten')
@@ -126,6 +128,7 @@ describe('QuickLink Billing History & Features Gating Suite', () => {
     it('should download CSV stream to Pro tier members', async () => {
       testUser.planId = 'pro';
       await testUser.save();
+      await Subscription.updateOne({ userId: testUser._id }, { planId: 'pro', status: 'active' });
 
       await Url.create({
         userId: testUser._id,

@@ -14,6 +14,7 @@ const mongoose = require('mongoose');
 const app = require('../server');
 const Url = require('../models/Url');
 const User = require('../models/User');
+const Subscription = require('../models/Subscription');
 
 // Define connection string for testing database
 const TEST_MONGO_URI = 'mongodb://127.0.0.1:27017/quicklink_test';
@@ -40,20 +41,29 @@ describe('QuickLink URL Shortener API Suite', () => {
   beforeEach(async () => {
     await Url.deleteMany({});
     await User.deleteMany({});
+    await Subscription.deleteMany({});
 
     // Create authenticated user context
     testUser = await User.create({
       name: 'Test User',
       email: 'test@example.com',
       password: 'password123',
+      planId: 'pro',
     });
     testToken = testUser.getJwtToken();
+
+    await Subscription.create({
+      userId: testUser._id,
+      planId: 'pro',
+      status: 'active',
+    });
   });
 
   // Close database connections after testing finishes
   afterAll(async () => {
     await Url.deleteMany({});
     await User.deleteMany({});
+    await Subscription.deleteMany({});
     await mongoose.connection.close();
   });
 
@@ -122,6 +132,7 @@ describe('QuickLink URL Shortener API Suite', () => {
 
       const res = await request(app)
         .post('/api/shorten')
+        .set('Authorization', `Bearer ${testToken}`)
         .send(payload)
         .expect('Content-Type', /json/)
         .expect(400);

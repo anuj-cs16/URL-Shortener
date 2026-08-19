@@ -102,10 +102,10 @@ app.use(helmet({
 app.use(cors());
 
 // Stripe Webhook needs raw body parsed BEFORE express.json()
-app.use(
+app.post(
   '/api/subscription/webhook',
   express.raw({ type: 'application/json' }),
-  require('./routes/subscriptionRoutes')
+  require('./controllers/subscriptionController').handleWebhook
 );
 
 app.use(express.json());
