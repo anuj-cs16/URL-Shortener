@@ -23,8 +23,7 @@ import Footer from './components/layout/Footer';
 
 // Page components
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
+
 import DashboardPage from './pages/DashboardPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UrlAnalyticsPage from './pages/UrlAnalyticsPage';
@@ -37,8 +36,7 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import BillingPage from './pages/BillingPage';
 
 // Route guards & utilities
-import ProtectedRoute from './components/common/ProtectedRoute';
-import GuestRoute from './components/common/GuestRoute';
+
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Global Stylesheet
@@ -56,89 +54,16 @@ function App() {
                 {/* Guest & Public routes */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/pricing" element={<PricingPage />} />
-                
-                <Route
-                  path="/login"
-                  element={
-                    <GuestRoute>
-                      <LoginPage />
-                    </GuestRoute>
-                  }
-                />
-                <Route
-                  path="/signup"
-                  element={
-                    <GuestRoute>
-                      <SignupPage />
-                    </GuestRoute>
-                  }
-                />
 
                 {/* Protected member pages */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/analytics"
-                  element={
-                    <ProtectedRoute>
-                      <AnalyticsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/analytics/:shortCode"
-                  element={
-                    <ProtectedRoute>
-                      <UrlAnalyticsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/notifications"
-                  element={
-                    <ProtectedRoute>
-                      <NotificationsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings/notifications"
-                  element={
-                    <ProtectedRoute>
-                      <EmailSettingsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings/security"
-                  element={
-                    <ProtectedRoute>
-                      <SecurityPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/payment/success"
-                  element={
-                    <ProtectedRoute>
-                      <PaymentSuccessPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/billing"
-                  element={
-                    <ProtectedRoute>
-                      <BillingPage />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/analytics/:shortCode" element={<UrlAnalyticsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/settings/notifications" element={<EmailSettingsPage />} />
+                <Route path="/settings/security" element={<SecurityPage />} />
+                <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                <Route path="/billing" element={<BillingPage />} />
                 <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
 
                 {/* Fallback routing */}
