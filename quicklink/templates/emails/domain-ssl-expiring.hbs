@@ -1,0 +1,24 @@
+<h1>⚠️ SSL Certificate Expiring Soon</h1>
+<p>Hello {{name}},</p>
+<p>The SSL certificate for your custom domain <strong>{{domain}}</strong> will expire on <strong>{{expiresAt}}</strong> ({{daysLeft}} days remaining).</p>
+
+{{#if autoRenew}}
+<div style="background-color: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 8px; padding: 16px; margin: 16px 0;">
+  <p style="color: #4CAF50; font-weight: 600; margin: 0;">✅ Auto-renewal is enabled</p>
+  <p style="color: #888; margin: 8px 0 0 0; font-size: 0.9rem;">No action is required. Your certificate will be automatically renewed before it expires.</p>
+</div>
+{{else}}
+<div style="background-color: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 8px; padding: 16px; margin: 16px 0;">
+  <p style="color: #FF9800; font-weight: 600; margin: 0;">⚠️ Auto-renewal is disabled</p>
+  <p style="color: #888; margin: 8px 0 0 0; font-size: 0.9rem;">Please renew your certificate before it expires to avoid service interruption.</p>
+</div>
+
+<div style="text-align: center; margin-top: 24px;">
+  <a href="{{appUrl}}/settings/domain" class="btn">Renew Certificate Now 🔒</a>
+</div>
+{{/if}}
+
+<div class="divider"></div>
+
+<p style="font-size: 0.85rem; color: #888;">If your SSL certificate expires, your custom domain links will stop working until the certificate is renewed.</p>
+<p>Best regards,<br>The QuickLink Team</p>

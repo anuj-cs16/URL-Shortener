@@ -520,6 +520,168 @@ const startTrialReminderJob = () => {
 };
 
 /**
+ * JOB 10: SSL Certificate Renewal Check
+ * Cron schedule: Every day at 3:00 AM (0 3 * * *)
+ */
+const startSslRenewalJob = () => {
+  cron.schedule('0 3 * * *', async () => {
+    console.log('[Cron Job]: Starting SSL certificate renewal check...');
+    try {
+      const CustomDomain = require('../models/CustomDomain');
+      const domainService = require('./domainService');
+
+      const activeDomains = await CustomDomain.find({ status: 'active' });
+      let renewedCount = 0;
+
+      for (const domain of activeDomains) {
+        if (domain.needsSslRenewal()) {
+          const result = await domainService.renewSslCertificate(domain.domain);
+          if (result.renewed) {
+            renewedCount++;
+
+            // Send renewal confirmation if user exists
+            const user = await User.findById(domain.userId);
+            if (user) {
+              await Notification.create({
+                userId: user._id,
+                type: 'welcome',
+                title: 'SSL Certificate Renewed 🔒',
+                message: `The SSL certificate for ${domain.domain} has been automatically renewed.`,
+                metadata: { domain: domain.domain, expiresAt: result.expiresAt },
+              });
+            }
+          }
+        }
+      }
+
+      console.log(`[Cron Job]: SSL renewal check complete. ${renewedCount} certificates renewed.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: SSL renewal check failed: ${error.message}`);
+    }
+  });
+};
+
+/**
+ * JOB 11: Domain Health Check
+ * Cron schedule: Every 6 hours (0 *\/6 * * *)
+ */
+const startDomainHealthCheckJob = () => {
+  cron.schedule('0 */6 * * *', async () => {
+    console.log('[Cron Job]: Starting domain health check...');
+    try {
+      const CustomDomain = require('../models/CustomDomain');
+      const domainService = require('./domainService');
+
+      const activeDomains = await CustomDomain.find({ status: 'active' });
+      let checkedCount = 0;
+      let issueCount = 0;
+
+      for (const domain of activeDomains) {
+        const health = await domainService.checkDomainHealth(domain.domain);
+        checkedCount++;
+
+        if (health.overall === 'unhealthy') {
+          issueCount++;
+
+          // Update domain status
+          domain.errorMessage = `Health check failed: ${health.dns.message || 'Unknown issue'}`;
+          if (health.dns.status === 'error') {
+            domain.status = 'dns_failed';
+          }
+          await domain.save();
+
+          // Alert user
+          const user = await User.findById(domain.userId);
+          if (user) {
+            emailService.sendDomainHealthAlertEmail(user, {
+              domain: domain.domain,
+              issue: domain.errorMessage,
+              healthReport: health,
+            }).catch((err) => {
+              console.error(`Domain health alert email failed: ${err.message}`);
+            });
+
+            await Notification.create({
+              userId: user._id,
+              type: 'welcome',
+              title: 'Domain Health Alert 🚨',
+              message: `Health issue detected with ${domain.domain}. Please check your DNS settings.`,
+              metadata: { domain: domain.domain, health },
+            });
+          }
+        }
+      }
+
+      console.log(`[Cron Job]: Health check complete for ${checkedCount} domains. ${issueCount} issues found.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Domain health check failed: ${error.message}`);
+    }
+  });
+};
+
+/**
+ * JOB 12: Pending Verification Cleanup
+ * Cron schedule: Every day at midnight (0 0 * * *)
+ */
+const startPendingVerificationCleanupJob = () => {
+  cron.schedule('5 0 * * *', async () => {
+    console.log('[Cron Job]: Starting pending verification cleanup...');
+    try {
+      const CustomDomain = require('../models/CustomDomain');
+
+      const pendingDomains = await CustomDomain.find({
+        status: 'pending_verification',
+      });
+
+      let reminderCount = 0;
+      let removedCount = 0;
+
+      for (const domain of pendingDomains) {
+        const ageInDays = Math.floor(
+          (Date.now() - new Date(domain.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (ageInDays >= 30) {
+          // Remove domains pending for over 30 days
+          domain.status = 'removed';
+          domain.errorMessage = 'Removed due to unverified DNS after 30 days';
+          await domain.save();
+          removedCount++;
+
+          const user = await User.findById(domain.userId);
+          if (user) {
+            await Notification.create({
+              userId: user._id,
+              type: 'welcome',
+              title: 'Custom Domain Removed ⏳',
+              message: `Your domain ${domain.domain} was removed because DNS was not verified within 30 days.`,
+              metadata: { domain: domain.domain },
+            });
+          }
+        } else if (ageInDays >= 7) {
+          // Send reminder for domains pending over 7 days
+          const user = await User.findById(domain.userId);
+          if (user) {
+            await Notification.create({
+              userId: user._id,
+              type: 'welcome',
+              title: 'DNS Verification Reminder 📋',
+              message: `Your domain ${domain.domain} is still pending verification. Please complete DNS setup to activate it.`,
+              metadata: { domain: domain.domain, daysRemaining: 30 - ageInDays },
+            });
+            reminderCount++;
+          }
+        }
+      }
+
+      console.log(`[Cron Job]: Verification cleanup complete. ${reminderCount} reminders sent, ${removedCount} domains removed.`);
+    } catch (error) {
+      console.error(`[Cron Job Error]: Pending verification cleanup failed: ${error.message}`);
+    }
+  });
+};
+
+/**
  * Initializes and triggers scheduled node-cron tasks.
  */
 const initScheduledJobs = () => {
@@ -536,9 +698,13 @@ const initScheduledJobs = () => {
   startUsageLimitWarningJob();
   startMonthlyUsageResetJob();
   startTrialReminderJob();
-  console.log('✅ Cron Jobs initialized successfully');
+  startSslRenewalJob();
+  startDomainHealthCheckJob();
+  startPendingVerificationCleanupJob();
+  console.log('✅ Cron Jobs initialized successfully (including domain jobs)');
 };
 
 module.exports = {
   initScheduledJobs,
 };
+

@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useUrls } from '../hooks/useUrls';
 import { useSubscription } from '../hooks/useSubscription';
+import { useDomains } from '../hooks/useDomains';
 import * as authApi from '../api/authApi';
 import UrlForm from '../components/url/UrlForm';
 import UrlResult from '../components/url/UrlResult';
@@ -33,6 +34,7 @@ const DashboardPage = () => {
   const { user, updateUser } = useAuth();
   const { urls, isLoading, shorten, remove } = useUrls();
   const { subscription, usage, fetchCurrentSubscription } = useSubscription();
+  const { activeDomain } = useDomains(subscription?.planId === 'business');
   const [shortenedData, setShortenedData] = useState(null);
 
   // Bulk States
@@ -85,9 +87,9 @@ const DashboardPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  const handleShortenSubmit = async (longUrl, customCode) => {
+  const handleShortenSubmit = async (longUrl, customCode, preferredDomain) => {
     try {
-      const data = await shorten(longUrl, customCode);
+      const data = await shorten(longUrl, customCode, preferredDomain);
       setShortenedData(data);
     } catch (err) {
       setShortenedData(null);
@@ -166,6 +168,7 @@ const DashboardPage = () => {
           planId={subscription?.planId}
           urlsCreated={usage?.urlsCreated?.used || 0}
           urlsLimit={usage?.urlsCreated?.limit || 10}
+          activeDomain={activeDomain}
         />
         {shortenedData && <UrlResult urlData={shortenedData} />}
         

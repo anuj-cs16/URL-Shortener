@@ -243,11 +243,47 @@ const incrementClickUsage = async (userId) => {
   }
 };
 
+/**
+ * Middleware: Gates Custom Domain feature to Business plan subscribers.
+ */
+const checkBusinessPlan = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        message: 'Custom domains require a Business account',
+        feature: 'customDomain',
+        requiredPlan: 'business',
+        upgradeUrl: '/pricing',
+      });
+    }
+
+    const sub = await Subscription.findOne({ userId: req.user._id });
+    const planId = sub ? sub.planId : 'free';
+
+    if (!isFeatureAvailable(planId, 'customDomain')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Custom domains require a Business plan',
+        feature: 'customDomain',
+        requiredPlan: 'business',
+        currentPlan: planId,
+        upgradeUrl: '/pricing',
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   checkUrlLimit,
   checkCustomCodeAllowed,
   checkApiAccess,
   checkBulkAccess,
+  checkBusinessPlan,
   incrementUrlUsage,
   incrementClickUsage,
   getCurrentUsage,

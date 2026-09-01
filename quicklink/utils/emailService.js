@@ -528,6 +528,96 @@ const sendUsageLimitWarningEmail = async (user, usageData) => {
   });
 };
 
+/**
+ * Transactional: Custom domain added with DNS instructions.
+ */
+const sendDomainAddedEmail = async (user, domainData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: 'Custom Domain Added 🌐',
+    template: 'domain-added',
+    context: {
+      name: user.name,
+      domain: domainData.domain,
+      verificationToken: domainData.verificationToken,
+    },
+  });
+};
+
+/**
+ * Transactional: Domain DNS verified, SSL provisioning started.
+ */
+const sendDomainVerifiedEmail = async (user, domainData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: 'Domain Verified! ✅',
+    template: 'domain-verified',
+    context: {
+      name: user.name,
+      domain: domainData.domain,
+    },
+  });
+};
+
+/**
+ * Transactional: Custom domain is now live and active.
+ */
+const sendDomainActiveEmail = async (user, domainData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: 'Your Custom Domain is Live! 🎉',
+    template: 'domain-active',
+    context: {
+      name: user.name,
+      domain: domainData.domain,
+      exampleUrl: domainData.exampleUrl || `https://${domainData.domain}/example`,
+    },
+  });
+};
+
+/**
+ * Transactional: SSL certificate expiry warning.
+ */
+const sendDomainSslExpiringEmail = async (user, domainData) => {
+  if (!user || !user.email) return false;
+  const daysLeft = domainData.sslExpiresAt
+    ? Math.ceil((new Date(domainData.sslExpiresAt) - new Date()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  return await sendEmail({
+    to: user.email,
+    subject: `⚠️ SSL Certificate Expiring (${daysLeft} days)`,
+    template: 'domain-ssl-expiring',
+    context: {
+      name: user.name,
+      domain: domainData.domain,
+      expiresAt: new Date(domainData.sslExpiresAt).toLocaleDateString(),
+      daysLeft,
+      autoRenew: domainData.sslAutoRenew !== false,
+    },
+  });
+};
+
+/**
+ * Transactional: Domain health alert for DNS or SSL issues.
+ */
+const sendDomainHealthAlertEmail = async (user, domainData) => {
+  if (!user || !user.email) return false;
+  return await sendEmail({
+    to: user.email,
+    subject: '🚨 Domain Health Alert',
+    template: 'domain-health-alert',
+    context: {
+      name: user.name,
+      domain: domainData.domain,
+      issue: domainData.issue || 'Unknown issue detected',
+    },
+  });
+};
+
 module.exports = {
   verifyEmailConnection,
   sendWelcomeEmail,
@@ -548,4 +638,10 @@ module.exports = {
   sendSubscriptionCanceledEmail,
   sendTrialEndingEmail,
   sendUsageLimitWarningEmail,
+  sendDomainAddedEmail,
+  sendDomainVerifiedEmail,
+  sendDomainActiveEmail,
+  sendDomainSslExpiringEmail,
+  sendDomainHealthAlertEmail,
 };
+

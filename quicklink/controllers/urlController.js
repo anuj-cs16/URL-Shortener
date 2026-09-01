@@ -12,6 +12,7 @@
 const path = require('path');
 const QRCode = require('qrcode');
 const Url = require('../models/Url');
+const CustomDomain = require('../models/CustomDomain');
 const Click = require('../models/Click');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
@@ -38,7 +39,7 @@ const {
  */
 const createShortUrl = async (req, res, next) => {
   try {
-    const { longUrl, customCode, urlPassword } = req.body;
+    const { longUrl, customCode, urlPassword, preferredDomain } = req.body;
     let shortCode = '';
 
     // Check if custom code is provided
@@ -79,6 +80,33 @@ const createShortUrl = async (req, res, next) => {
       }
     }
 
+    // Determine which domain to use for the short URL
+    let selectedDomain = null;
+    if (req.user) {
+      // Check if user has an active custom domain
+      const userDomain = await CustomDomain.findOne({
+        userId: req.user._id,
+        status: 'active',
+      });
+
+      if (userDomain) {
+        if (preferredDomain && preferredDomain !== 'default') {
+          // Use preferred domain if specified and valid
+          const validPreferred = await CustomDomain.findOne({
+            userId: req.user._id,
+            domain: preferredDomain.toLowerCase(),
+            status: 'active',
+          });
+          if (validPreferred) {
+            selectedDomain = validPreferred.domain;
+          }
+        } else if (userDomain.isDefault) {
+          // Use default custom domain
+          selectedDomain = userDomain.domain;
+        }
+      }
+    }
+
     // Save URL document to database
     const newUrl = new Url({
       longUrl,
@@ -86,8 +114,17 @@ const createShortUrl = async (req, res, next) => {
       customCode: customCode || null,
       userId: req.user ? req.user._id : null,
       urlPassword: hashedUrlPassword,
+      customDomain: selectedDomain,
     });
     await newUrl.save();
+
+    // Update custom domain URL count
+    if (selectedDomain) {
+      await CustomDomain.updateOne(
+        { domain: selectedDomain },
+        { $inc: { urlCount: 1 } }
+      );
+    }
 
     // Increment user url count stats if logged in
     if (req.user) {
@@ -95,9 +132,14 @@ const createShortUrl = async (req, res, next) => {
       await req.user.save();
     }
 
-    // Construct full short URL and generate QR code
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-    const shortUrl = `${baseUrl}/${shortCode}`;
+    // Construct full short URL with appropriate domain
+    let shortUrl;
+    if (selectedDomain) {
+      shortUrl = `https://${selectedDomain}/${shortCode}`;
+    } else {
+      const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+      shortUrl = `${baseUrl}/${shortCode}`;
+    }
 
     // Send URL Creation Email and Notification in background (do not await)
     if (req.user) {
@@ -161,12 +203,38 @@ const redirectToLongUrl = async (req, res, next) => {
     const { shortCode } = req.params;
     const acceptsHtml = req.headers.accept && req.headers.accept.includes('text/html');
 
+    // Detect if request is from a custom domain
+    const requestDomain = req.customDomain || null;
+
+    // Build cache key including domain for isolation
+    const cacheKey = requestDomain ? `redirect_${requestDomain}_${shortCode}` : `redirect_${shortCode}`;
+
     // Fetch from cache first
-    let url = getCache(`redirect_${shortCode}`);
+    let url = getCache(cacheKey);
     if (!url) {
-      url = await Url.findOne({ shortCode }).lean();
+      if (requestDomain) {
+        // Custom domain: verify domain is active and find URL by shortCode + domain
+        const domainRecord = await CustomDomain.findOne({
+          domain: requestDomain,
+          status: 'active',
+        }).lean();
+
+        if (domainRecord) {
+          url = await Url.findOne({ shortCode, customDomain: requestDomain }).lean();
+          // Fallback: if URL not found with domain filter, try without
+          if (!url) {
+            url = await Url.findOne({ shortCode }).lean();
+          }
+        } else {
+          // Domain not active, fall through to default lookup
+          url = await Url.findOne({ shortCode }).lean();
+        }
+      } else {
+        url = await Url.findOne({ shortCode }).lean();
+      }
+
       if (url) {
-        setCache(`redirect_${shortCode}`, url, 300);
+        setCache(cacheKey, url, 300);
       }
     }
 

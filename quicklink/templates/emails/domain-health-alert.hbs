@@ -1,0 +1,26 @@
+<h1>🚨 Domain Health Alert</h1>
+<p>Hello {{name}},</p>
+<p>We've detected a health issue with your custom domain <strong>{{domain}}</strong>.</p>
+
+<h2 style="font-size: 18px; margin-top: 24px;">Issue Detected:</h2>
+<div style="background-color: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 8px; padding: 16px; margin: 16px 0;">
+  <p style="color: #F44336; font-weight: 600; margin: 0;">{{issue}}</p>
+</div>
+
+<h3 style="font-size: 16px;">How to fix this:</h3>
+<ul class="bullet-list">
+  <li>Verify your DNS records are still correctly configured</li>
+  <li>Check that your domain is not expired at your registrar</li>
+  <li>Ensure the TXT verification record is still present</li>
+  <li>If using Cloudflare, verify the proxy settings are correct</li>
+</ul>
+
+<div style="text-align: center; margin-top: 24px;">
+  <a href="{{appUrl}}/settings/domain" class="btn">Check Domain Status 🔍</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 0.85rem; color: #888;">While the health issue persists, links using your custom domain may not work correctly. Links will automatically fall back to the default QuickLink domain.</p>
+<p>If you need assistance, please contact our support team.</p>
+<p>Best regards,<br>The QuickLink Team</p>

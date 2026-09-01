@@ -62,6 +62,10 @@ const urlSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  customDomain: {
+    type: String,
+    default: null,
+  },
 });
 
 // Add index on createdAt

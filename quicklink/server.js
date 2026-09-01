@@ -55,6 +55,7 @@ const urlRoutes = require('./routes/urlRoutes');
 const authRoutes = require('./routes/authRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const domainRoutes = require('./routes/domainRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -208,11 +209,29 @@ app.post('/api/admin/cache-clear', (req, res) => {
   });
 });
 
+// Custom domain hostname detection middleware
+app.use((req, res, next) => {
+  const hostname = req.hostname;
+  const defaultDomain = process.env.DEFAULT_DOMAIN || '';
+
+  // Check if request is from a custom domain (not default, not localhost)
+  if (hostname !== 'localhost' &&
+      hostname !== '127.0.0.1' &&
+      hostname !== defaultDomain &&
+      !hostname.endsWith('.run.app') &&
+      !hostname.endsWith('.localhost')) {
+    req.customDomain = hostname;
+  }
+
+  next();
+});
+
 // Mount router endpoints
 app.use('/api/auth', authRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/domains', domainRoutes);
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/bulk-shorten', require('./routes/bulkRoutes'));
 app.use('/api/export', require('./routes/exportRoutes'));

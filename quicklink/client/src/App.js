@@ -34,6 +34,7 @@ import SecurityPage from './pages/SecurityPage';
 import PricingPage from './pages/PricingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import BillingPage from './pages/BillingPage';
+import DomainSetupPage from './pages/DomainSetupPage';
 
 // Route guards & utilities
 
@@ -64,6 +65,7 @@ function App() {
                 <Route path="/settings/security" element={<SecurityPage />} />
                 <Route path="/payment/success" element={<PaymentSuccessPage />} />
                 <Route path="/billing" element={<BillingPage />} />
+                <Route path="/settings/domain" element={<DomainSetupPage />} />
                 <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
 
                 {/* Fallback routing */}

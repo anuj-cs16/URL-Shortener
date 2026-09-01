@@ -15,10 +15,11 @@ import { FiLink, FiClipboard, FiZap, FiChevronDown, FiChevronUp } from 'react-ic
 import LoadingSpinner from '../common/LoadingSpinner';
 import UpgradePrompt from '../subscription/UpgradePrompt';
 
-const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLimit = 10 }) => {
+const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLimit = 10, activeDomain = null }) => {
   const [longUrl, setLongUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [showCustom, setShowCustom] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState(activeDomain?.isDefault ? activeDomain.domain : 'default');
   const [error, setError] = useState('');
 
   const isFree = planId === 'free';
@@ -42,7 +43,7 @@ const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLi
       return;
     }
     setError('');
-    onSubmit(longUrl, showCustom && !isFree ? customCode : '');
+    onSubmit(longUrl, showCustom && !isFree ? customCode : '', selectedDomain);
   };
 
   const handlePaste = async () => {
@@ -60,6 +61,21 @@ const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLi
   return (
     <form className="url-form-card glass-card" onSubmit={handleSubmit}>
       <div className="url-input-group">
+        {activeDomain && (
+          <div className="domain-selector-row" style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '10px' }}>Domain:</label>
+            <select
+              className="form-input domain-select-input"
+              value={selectedDomain}
+              onChange={(e) => setSelectedDomain(e.target.value)}
+              disabled={isLoading}
+              style={{ height: '36px', fontSize: '0.85rem', padding: '0 12px', maxWidth: '260px' }}
+            >
+              <option value="default">Default (QuickLink)</option>
+              <option value={activeDomain.domain}>🌐 {activeDomain.domain}</option>
+            </select>
+          </div>
+        )}
         <div className="input-prefix-icon">
           <FiLink />
         </div>

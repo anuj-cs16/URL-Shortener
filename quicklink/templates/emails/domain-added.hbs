@@ -1,0 +1,30 @@
+<h1>Custom Domain Added 🌐</h1>
+<p>Hello {{name}},</p>
+<p>Your custom domain <strong>{{domain}}</strong> has been added to your QuickLink account. Before it can go live, you need to verify ownership by adding a DNS record.</p>
+
+<h2 style="font-size: 18px; margin-top: 24px;">DNS Setup Instructions:</h2>
+
+<div style="background-color: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 16px; margin: 16px 0; font-family: monospace;">
+  <p style="margin: 4px 0; color: #aaa;">Type: <span style="color: #3ecfcf;">TXT</span></p>
+  <p style="margin: 4px 0; color: #aaa;">Host: <span style="color: #3ecfcf;">_quicklink-verify</span></p>
+  <p style="margin: 4px 0; color: #aaa;">Value: <span style="color: #3ecfcf;">quicklink-verify={{verificationToken}}</span></p>
+  <p style="margin: 4px 0; color: #aaa;">TTL: <span style="color: #3ecfcf;">300</span></p>
+</div>
+
+<h3 style="font-size: 16px;">Quick Setup Steps:</h3>
+<ol>
+  <li>Log into your DNS provider (Cloudflare, GoDaddy, Namecheap, etc.)</li>
+  <li>Navigate to DNS records management</li>
+  <li>Add a new TXT record with the values above</li>
+  <li>Wait 5-10 minutes for DNS propagation</li>
+  <li>Click the button below to verify</li>
+</ol>
+
+<div style="text-align: center; margin-top: 24px;">
+  <a href="{{appUrl}}/settings/domain" class="btn">Verify Domain Now 🔍</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size: 0.85rem; color: #888;">DNS changes can take up to 48 hours to propagate globally, but most providers update within 5-10 minutes. If verification fails, please wait and try again.</p>
+<p>Best regards,<br>The QuickLink Team</p>
