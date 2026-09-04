@@ -15,9 +15,12 @@ import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMenu, FiX } from 'react-icons/fi';
+import TeamSwitcher from '../team/TeamSwitcher';
+import { useTeamContext } from '../../context/TeamContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { activeTeam } = useTeamContext() || {};
 
   const navLinkClass = ({ isActive }) =>
     `nav-link ${isActive ? 'nav-link-active' : ''}`;
@@ -25,16 +28,24 @@ const Navbar = () => {
   return (
     <nav className="navbar-container">
       <div className="navbar-content">
-        {/* Left Side: Branding */}
-        <Link to="/" className="navbar-logo" onClick={() => setIsOpen(false)}>
-          <span style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>🔗</span>
-          <span className="logo-text-bold">QuickLink</span>
-        </Link>
+        {/* Left Side: Branding & Team Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link to="/" className="navbar-logo" onClick={() => setIsOpen(false)}>
+            <span style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>🔗</span>
+            <span className="logo-text-bold">QuickLink</span>
+          </Link>
+          <TeamSwitcher />
+        </div>
 
         {/* Center Section: Navigation Links (Desktop) */}
         <div className="navbar-links-desktop">
           <NavLink to="/" className={navLinkClass}>Home</NavLink>
           <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
+          {activeTeam && (
+            <NavLink to={`/teams/${activeTeam.id || activeTeam._id}`} className={navLinkClass}>
+              Team Workspace
+            </NavLink>
+          )}
           <NavLink to="/analytics" className={navLinkClass}>Analytics</NavLink>
           <NavLink to="/pricing" className={navLinkClass}>Pricing</NavLink>
         </div>

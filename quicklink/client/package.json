@@ -17,6 +17,8 @@
     "date-fns": "^4.4.0",
     "framer-motion": "^13.1.0",
     "react": "^19.2.8",
+    "react-avatar": "^5.0.4",
+    "react-beautiful-dnd": "^13.1.1",
     "react-chartjs-2": "^5.3.1",
     "react-copy-to-clipboard": "^5.1.1",
     "react-countup": "^6.5.3",
@@ -29,6 +31,7 @@
     "react-qr-code": "^2.2.0",
     "react-router-dom": "^7.18.2",
     "react-scripts": "5.0.1",
+    "react-select": "^5.10.2",
     "web-vitals": "^2.1.4",
     "workbox-webpack-plugin": "^7.4.1"
   },

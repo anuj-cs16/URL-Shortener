@@ -226,7 +226,10 @@ app.use((req, res, next) => {
   next();
 });
 
+const teamRoutes = require('./routes/teamRoutes');
+
 // Mount router endpoints
+app.use('/api/teams', teamRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/analytics', analyticsRoutes);

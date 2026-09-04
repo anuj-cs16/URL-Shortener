@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Role Updated</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .card { background: #1e293b; border-radius: 8px; padding: 30px; max-width: 600px; margin: 0 auto; border: 1px solid #334155; }
+    .btn { display: inline-block; background: #6C63FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Your Role Has Been Updated</h2>
+    <p>Hi {{name}},</p>
+    <p>Your permissions in <strong>{{teamName}}</strong> have been updated from <strong>{{oldRole}}</strong> to <strong>{{newRole}}</strong>.</p>
+    <a href="{{dashboardUrl}}" class="btn">View Team Dashboard</a>
+  </div>
+</body>
+</html>

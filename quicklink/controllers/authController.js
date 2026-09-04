@@ -426,6 +426,26 @@ const getMe = async (req, res, next) => {
     req.user.totalUrlsCreated = totalUrlsCreated;
     await req.user.save();
 
+    const Team = require('../models/Team');
+    const userTeams = await Team.find({ _id: { $in: req.user.teamIds || [] }, isActive: true })
+      .select('name slug logo stats ownerId members')
+      .lean();
+
+    let activeTeam = null;
+    if (req.user.activeTeamId) {
+      const found = userTeams.find((t) => t._id.toString() === req.user.activeTeamId.toString());
+      if (found) {
+        const memberInfo = (found.members || []).find((m) => m.userId.toString() === req.user._id.toString());
+        activeTeam = {
+          id: found._id,
+          name: found.name,
+          slug: found.slug,
+          logo: found.logo,
+          role: memberInfo ? memberInfo.role : 'viewer',
+        };
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -442,6 +462,17 @@ const getMe = async (req, res, next) => {
           isLifetimeMember: req.user.isLifetimeMember,
           referralCode: req.user.referralCode,
           trialUsed: req.user.trialUsed,
+          teamIds: req.user.teamIds || [],
+          teams: userTeams.map((t) => ({
+            id: t._id,
+            name: t.name,
+            slug: t.slug,
+            logo: t.logo,
+            memberCount: t.stats ? t.stats.totalMembers : 1,
+            isOwner: t.ownerId.toString() === req.user._id.toString(),
+          })),
+          activeTeamId: req.user.activeTeamId,
+          activeTeam,
         },
       },
     });

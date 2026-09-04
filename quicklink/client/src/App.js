@@ -36,6 +36,16 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import BillingPage from './pages/BillingPage';
 import DomainSetupPage from './pages/DomainSetupPage';
 
+import { TeamProvider } from './context/TeamContext';
+
+// Team pages
+import CreateTeamPage from './pages/CreateTeamPage';
+import TeamDashboardPage from './pages/TeamDashboardPage';
+import TeamMembersPage from './pages/TeamMembersPage';
+import TeamSettingsPage from './pages/TeamSettingsPage';
+import TeamAnalyticsPage from './pages/TeamAnalyticsPage';
+import AcceptInvitePage from './pages/AcceptInvitePage';
+
 // Route guards & utilities
 
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -47,63 +57,73 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <BrowserRouter>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <Navbar />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Routes>
-                {/* Guest & Public routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/pricing" element={<PricingPage />} />
+        <TeamProvider>
+          <BrowserRouter>
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+              <Navbar />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Routes>
+                  {/* Guest & Public routes */}
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
 
-                {/* Protected member pages */}
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/analytics/:shortCode" element={<UrlAnalyticsPage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/settings/notifications" element={<EmailSettingsPage />} />
-                <Route path="/settings/security" element={<SecurityPage />} />
-                <Route path="/payment/success" element={<PaymentSuccessPage />} />
-                <Route path="/billing" element={<BillingPage />} />
-                <Route path="/settings/domain" element={<DomainSetupPage />} />
-                <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
+                  {/* Protected member pages */}
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/analytics/:shortCode" element={<UrlAnalyticsPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/settings/notifications" element={<EmailSettingsPage />} />
+                  <Route path="/settings/security" element={<SecurityPage />} />
+                  <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                  <Route path="/billing" element={<BillingPage />} />
+                  <Route path="/settings/domain" element={<DomainSetupPage />} />
+                  <Route path="/verify-2fa" element={<VerifyTwoFactorPage />} />
 
-                {/* Fallback routing */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Team Workspace Routes */}
+                  <Route path="/teams/create" element={<CreateTeamPage />} />
+                  <Route path="/teams/:teamId" element={<TeamDashboardPage />} />
+                  <Route path="/teams/:teamId/members" element={<TeamMembersPage />} />
+                  <Route path="/teams/:teamId/settings" element={<TeamSettingsPage />} />
+                  <Route path="/teams/:teamId/analytics" element={<TeamAnalyticsPage />} />
+                  <Route path="/teams/invite/:code" element={<AcceptInvitePage />} />
+
+                  {/* Fallback routing */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+              <Footer />
             </div>
-            <Footer />
-          </div>
 
-          {/* Toast Notification Container styling */}
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 3500,
-              style: {
-                background: '#16213E',
-                color: '#FFFFFF',
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font)',
-                fontSize: '0.88rem',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow)',
-              },
-              success: {
-                iconTheme: {
-                  primary: 'var(--success)',
-                  secondary: 'white',
+            {/* Toast Notification Container styling */}
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  background: '#16213E',
+                  color: '#FFFFFF',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font)',
+                  fontSize: '0.88rem',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: 'var(--shadow)',
                 },
-              },
-              error: {
-                iconTheme: {
-                  primary: 'var(--error)',
-                  secondary: 'white',
+                success: {
+                  iconTheme: {
+                    primary: 'var(--success)',
+                    secondary: 'white',
+                  },
                 },
-              },
-            }}
-          />
-        </BrowserRouter>
+                error: {
+                  iconTheme: {
+                    primary: 'var(--error)',
+                    secondary: 'white',
+                  },
+                },
+              }}
+            />
+          </BrowserRouter>
+        </TeamProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

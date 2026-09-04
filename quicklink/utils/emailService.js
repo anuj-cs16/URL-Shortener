@@ -618,6 +618,86 @@ const sendDomainHealthAlertEmail = async (user, domainData) => {
   });
 };
 
+/**
+ * Team: Invite Email
+ */
+const sendTeamInviteEmail = async (invitee, team, inviter) => {
+  const email = typeof invitee === 'string' ? invitee : invitee.email;
+  const inviteCode = typeof invitee === 'object' ? invitee.inviteCode : '';
+  const inviteUrl = `${appUrl}/teams/invite/${inviteCode}`;
+
+  return await sendEmail({
+    to: email,
+    subject: `You are invited to join ${team.name} on QuickLink`,
+    template: 'team-invite',
+    context: {
+      inviterName: inviter ? inviter.name : 'A team member',
+      teamName: team.name,
+      role: invitee.role || 'viewer',
+      inviteUrl,
+      appUrl,
+    },
+  });
+};
+
+/**
+ * Team: Welcome Email
+ */
+const sendTeamWelcomeEmail = async (user, team) => {
+  if (!user || !user.email) return false;
+  const dashboardUrl = `${appUrl}/teams/${team._id}`;
+
+  return await sendEmail({
+    to: user.email,
+    subject: `Welcome to ${team.name}! 🎉`,
+    template: 'team-welcome',
+    context: {
+      name: user.name,
+      teamName: team.name,
+      role: team.getMemberRole ? team.getMemberRole(user._id) : 'member',
+      dashboardUrl,
+    },
+  });
+};
+
+/**
+ * Team: Removed Email
+ */
+const sendTeamRemovedEmail = async (user, team) => {
+  if (!user || !user.email) return false;
+
+  return await sendEmail({
+    to: user.email,
+    subject: `You have been removed from ${team.name}`,
+    template: 'team-removed',
+    context: {
+      name: user.name,
+      teamName: team.name,
+    },
+  });
+};
+
+/**
+ * Team: Role Changed Email
+ */
+const sendTeamRoleChangedEmail = async (user, team, oldRole, newRole) => {
+  if (!user || !user.email) return false;
+  const dashboardUrl = `${appUrl}/teams/${team._id}`;
+
+  return await sendEmail({
+    to: user.email,
+    subject: `Your role in ${team.name} has been updated`,
+    template: 'team-role-changed',
+    context: {
+      name: user.name,
+      teamName: team.name,
+      oldRole,
+      newRole,
+      dashboardUrl,
+    },
+  });
+};
+
 module.exports = {
   verifyEmailConnection,
   sendWelcomeEmail,
@@ -643,5 +723,9 @@ module.exports = {
   sendDomainActiveEmail,
   sendDomainSslExpiringEmail,
   sendDomainHealthAlertEmail,
+  sendTeamInviteEmail,
+  sendTeamWelcomeEmail,
+  sendTeamRemovedEmail,
+  sendTeamRoleChangedEmail,
 };
 

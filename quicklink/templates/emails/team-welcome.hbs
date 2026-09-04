@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to {{teamName}}</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .card { background: #1e293b; border-radius: 8px; padding: 30px; max-width: 600px; margin: 0 auto; border: 1px solid #334155; }
+    .btn { display: inline-block; background: #6C63FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Welcome to {{teamName}}! 👋</h2>
+    <p>Hi {{name}},</p>
+    <p>You have successfully joined <strong>{{teamName}}</strong> as a <strong>{{role}}</strong>.</p>
+    <p>You now have access to shared team URLs, click analytics, and workspace collections.</p>
+    <a href="{{dashboardUrl}}" class="btn">Go to Team Dashboard</a>
+  </div>
+</body>
+</html>

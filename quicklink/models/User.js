@@ -138,6 +138,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  teamIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+  }],
+  activeTeamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    default: null,
+  },
 });
 
 /**

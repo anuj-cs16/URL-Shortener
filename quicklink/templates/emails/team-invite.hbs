@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Team Invitation</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .card { background: #1e293b; border-radius: 8px; padding: 30px; max-width: 600px; margin: 0 auto; border: 1px solid #334155; }
+    .btn { display: inline-block; background: #6C63FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+    .role-tag { background: #334155; color: #3ECFCF; padding: 4px 8px; border-radius: 4px; font-size: 14px; }
+    .warning { color: #f59e0b; font-size: 13px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>You are Invited to Join {{teamName}}!</h2>
+    <p><strong>{{inviterName}}</strong> has invited you to collaborate on the <strong>{{teamName}}</strong> workspace on QuickLink URL Shortener.</p>
+    <p>You have been assigned the role: <span class="role-tag">{{role}}</span></p>
+    <a href="{{inviteUrl}}" class="btn">Accept Invitation</a>
+    <p class="warning">⚠️ This invitation link will expire in 7 days.</p>
+    <hr style="border: 0; border-top: 1px solid #334155; margin: 25px 0;">
+    <h4>What is QuickLink Teams?</h4>
+    <p style="font-size: 14px; color: #94a3b8;">QuickLink Teams allows organizations to create, manage, track, and analyze custom short URLs collaboratively in a single shared dashboard.</p>
+  </div>
+</body>
+</html>

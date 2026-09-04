@@ -15,9 +15,15 @@ export const STORAGE_KEYS = {
 };
 
 export const PLAN_LIMITS = {
-  free: { urlsPerMonth: 10, clicksPerMonth: 1000 },
-  pro: { urlsPerMonth: 500, clicksPerMonth: 50000 },
-  business: { urlsPerMonth: -1, clicksPerMonth: -1 },
+  free: { urlsPerMonth: 10, clicksPerMonth: 1000, customCodes: 0, apiRequests: 100 },
+  pro: { urlsPerMonth: 500, clicksPerMonth: 50000, customCodes: 100, apiRequests: 5000 },
+  business: { urlsPerMonth: -1, clicksPerMonth: -1, customCodes: -1, apiRequests: -1 },
+};
+
+export const PLAN_FEATURES = {
+  free: ['10 URLs/month', 'Basic analytics', 'Standard support'],
+  pro: ['500 URLs/month', 'Custom short codes', 'Advanced analytics', 'Priority support'],
+  business: ['Unlimited URLs', 'Custom domains', 'Team management', 'API access', '24/7 support'],
 };
 
 export const API_ENDPOINTS = {
