@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Sparkles, MessageSquare, RefreshCw, ChevronRight } from 'lucide-react';
+import { Bot, X, Send, Sparkles, RefreshCw, ChevronRight } from 'lucide-react';
 import { aiApi } from '../../api/aiApi';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
