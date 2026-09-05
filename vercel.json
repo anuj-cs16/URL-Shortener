@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "installCommand": "cd quicklink && npm install --legacy-peer-deps",
   "buildCommand": "cd quicklink && npm run vercel-build",
   "rewrites": [
     {
