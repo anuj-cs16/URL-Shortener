@@ -118,24 +118,22 @@ app.use(hpp());
 app.use(sanitizeInput);
 app.use(checkBlockedIp);
 
-// Serve static assets — React build in production with gzip/brotli support and strict cache-control
-if (process.env.NODE_ENV === 'production') {
-  const expressStaticGzip = require('express-static-gzip');
-  app.use(expressStaticGzip(path.join(__dirname, 'client/build'), {
-    enableBrotli: true,
-    orderPreference: ['br', 'gz'],
+// Serve static assets — React build in production/serverless with strict cache-control
+const fs = require('fs');
+const clientBuildPath = path.join(__dirname, 'client/build');
+
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath, {
+    maxAge: '1y',
     setHeaders: (res, filePath) => {
       const baseName = path.basename(filePath);
-      if (baseName === 'index.html' || baseName === 'service-worker.js' || baseName === 'manifest.json') {
+      if (baseName === 'index.html' || baseName === 'manifest.json') {
         res.setHeader('Cache-Control', 'public, max-age=0, no-cache, no-store, must-revalidate');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
-    }
+    },
   }));
-} else {
-  app.use(express.static(path.join(__dirname, 'public')));
 }
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Mount API health check endpoint
 app.get('/api/health', (req, res) => {
@@ -242,16 +240,17 @@ app.use('/api/bulk-shorten', require('./routes/bulkRoutes'));
 app.use('/api/export', require('./routes/exportRoutes'));
 app.use('/', urlRoutes);
 
-// Serve React SPA catch-all in production (after API routes)
-if (process.env.NODE_ENV === 'production') {
-  app.get('{*path}', (req, res, next) => {
-    // API endpoints should fall through to the notFound handler
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
-  });
-}
+// Serve React SPA fallback (after API routes)
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || (req.path && req.path.startsWith('/api'))) {
+    return next();
+  }
+  const indexPath = path.join(__dirname, 'client', 'build', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  next();
+});
 
 // Fallback handlers for unmatched requests and uncaught errors
 app.use(notFound);
@@ -261,8 +260,8 @@ const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 let server;
-// Only bind to port if server is executed directly (not imported for testing)
-if (process.env.NODE_ENV !== 'test') {
+// Only bind to port if server is executed directly (not imported for testing or Vercel serverless)
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL && require.main === module) {
   server = app.listen(PORT, () => {
     console.log(`🚀 Server running in ${NODE_ENV} mode on port ${PORT}`);
   });

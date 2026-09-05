@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install --legacy-peer-deps && npm run build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
+  ]
+}

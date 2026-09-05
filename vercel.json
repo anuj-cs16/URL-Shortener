@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "cd quicklink && npm run vercel-build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/quicklink/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/quicklink/api/index.js"
+    }
+  ]
+}
