@@ -109,7 +109,6 @@ subscriptionSchema.methods.daysUntilRenewal = function () {
 };
 
 // Add indexes for query optimization
-subscriptionSchema.index({ userId: 1 }, { unique: true });
 subscriptionSchema.index({ stripeCustomerId: 1 });
 subscriptionSchema.index({ stripeSubscriptionId: 1 });
 subscriptionSchema.index({ status: 1 });

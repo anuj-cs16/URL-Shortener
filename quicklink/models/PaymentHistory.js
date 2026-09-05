@@ -70,7 +70,6 @@ const paymentHistorySchema = new mongoose.Schema(
 
 // Add indexes for history lookups and webhook idempotency checking
 paymentHistorySchema.index({ userId: 1 });
-paymentHistorySchema.index({ stripePaymentIntentId: 1 }, { unique: true });
 paymentHistorySchema.index({ status: 1 });
 paymentHistorySchema.index({ paidAt: -1 });
 

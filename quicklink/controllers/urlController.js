@@ -107,6 +107,19 @@ const createShortUrl = async (req, res, next) => {
       }
     }
 
+    // AI URL Safety Scan
+    const { analyzeUrlSafety, generateSmartAliasesAndTags } = require('../utils/geminiService');
+    const { scrapeUrlMetadata } = require('../utils/urlScraper');
+
+    const scrapedMeta = await scrapeUrlMetadata(longUrl);
+    const safetyCheck = await analyzeUrlSafety(longUrl, scrapedMeta);
+    if (safetyCheck && safetyCheck.isMalicious) {
+      return res.status(400).json({
+        success: false,
+        message: safetyCheck.reason || 'This destination URL was flagged as unsafe or malicious by QuickLink AI Guard.',
+      });
+    }
+
     // Save URL document to database
     const newUrl = new Url({
       longUrl,
@@ -115,8 +128,22 @@ const createShortUrl = async (req, res, next) => {
       userId: req.user ? req.user._id : null,
       urlPassword: hashedUrlPassword,
       customDomain: selectedDomain,
+      safetyStatus: safetyCheck && safetyCheck.isMalicious ? 'suspicious' : 'clean',
+      aiSummary: scrapedMeta.title || null,
     });
     await newUrl.save();
+
+    // Trigger background AI categorization & tagging
+    generateSmartAliasesAndTags(longUrl, scrapedMeta).then(async (aiResult) => {
+      if (aiResult) {
+        newUrl.aiCategory = aiResult.category || 'Other';
+        newUrl.aiTags = aiResult.tags || [];
+        newUrl.aiSummary = aiResult.summary || scrapedMeta.title || null;
+        await newUrl.save();
+      }
+    }).catch((err) => {
+      console.error(`[AI Background Enrichment Failed]: ${err.message}`);
+    });
 
     // Update custom domain URL count
     if (selectedDomain) {

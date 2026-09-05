@@ -20,6 +20,7 @@ import { Toaster } from 'react-hot-toast';
 // Layout components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import { AiCopilotDrawer } from './components/ai/AiCopilotDrawer';
 
 // Page components
 import HomePage from './pages/HomePage';
@@ -92,6 +93,7 @@ function App() {
                 </Routes>
               </div>
               <Footer />
+              <AiCopilotDrawer />
             </div>
 
             {/* Toast Notification Container styling */}

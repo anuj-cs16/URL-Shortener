@@ -66,6 +66,25 @@ const urlSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  aiSummary: {
+    type: String,
+    default: null,
+  },
+  aiCategory: {
+    type: String,
+    default: null,
+  },
+  aiTags: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  safetyStatus: {
+    type: String,
+    enum: ['clean', 'suspicious', 'blocked', 'unverified'],
+    default: 'unverified',
+  },
 });
 
 // Add index on createdAt

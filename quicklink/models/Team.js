@@ -113,14 +113,13 @@ const teamSchema = new mongoose.Schema({
 });
 
 // Indexes
-teamSchema.index({ slug: 1 }, { unique: true });
 teamSchema.index({ ownerId: 1 });
 teamSchema.index({ 'members.userId': 1 });
 
 /**
  * Pre-save hook: Generate slug if not provided & update timestamps and member count
  */
-teamSchema.pre('save', function (next) {
+teamSchema.pre('save', function () {
   this.updatedAt = new Date();
   if (this.members && Array.isArray(this.members)) {
     this.stats.totalMembers = this.members.length;
@@ -132,7 +131,6 @@ teamSchema.pre('save', function (next) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
   }
-  next();
 });
 
 /**

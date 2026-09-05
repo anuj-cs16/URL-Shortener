@@ -23,6 +23,7 @@ import DeviceDoughnutChart from '../components/analytics/DeviceDoughnutChart';
 import BrowserBarChart from '../components/analytics/BrowserBarChart';
 import CountryBarChart from '../components/analytics/CountryBarChart';
 import RecentClicksTable from '../components/analytics/RecentClicksTable';
+import { PredictiveInsightsCard } from '../components/ai/PredictiveInsightsCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiArrowLeft, FiLink, FiActivity, FiExternalLink, FiCalendar } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
@@ -127,6 +128,11 @@ const UrlAnalyticsPage = () => {
           </div>
         </section>
       )}
+
+      {/* Gemini AI Predictive Insights */}
+      <section className="mb-6" style={{ marginBottom: '24px' }}>
+        <PredictiveInsightsCard shortCode={shortCode} />
+      </section>
 
       {/* Charts Grid Layout */}
       <section className="chart-fullwidth-section">

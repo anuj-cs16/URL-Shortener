@@ -55,7 +55,6 @@ const teamInviteSchema = new mongoose.Schema({
 });
 
 // Indexes
-teamInviteSchema.index({ inviteCode: 1 }, { unique: true });
 teamInviteSchema.index({ teamId: 1 });
 teamInviteSchema.index({ email: 1 });
 teamInviteSchema.index({ status: 1 });

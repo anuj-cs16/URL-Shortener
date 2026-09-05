@@ -14,6 +14,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiLink, FiClipboard, FiZap, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import LoadingSpinner from '../common/LoadingSpinner';
 import UpgradePrompt from '../subscription/UpgradePrompt';
+import { SmartAliasSuggestions } from '../ai/SmartAliasSuggestions';
+import { aiApi } from '../../api/aiApi';
 
 const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLimit = 10, activeDomain = null }) => {
   const [longUrl, setLongUrl] = useState('');
@@ -21,6 +23,8 @@ const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLi
   const [showCustom, setShowCustom] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState(activeDomain?.isDefault ? activeDomain.domain : 'default');
   const [error, setError] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiData, setAiData] = useState(null);
 
   const isFree = planId === 'free';
 
@@ -147,7 +151,41 @@ const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLi
                 </div>
               ) : (
                 <>
-                  <label className="input-label-tag">Custom Alias (Optional)</label>
+                  <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+                    <label className="input-label-tag" style={{ margin: 0 }}>Custom Alias (Optional)</label>
+                    {longUrl && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!longUrl || aiLoading) return;
+                          setAiLoading(true);
+                          try {
+                            const res = await aiApi.getSmartSuggestions(longUrl);
+                            if (res.success && res.data) {
+                              setAiData(res.data);
+                            }
+                          } catch (e) {
+                            console.warn('AI suggestions error:', e.message);
+                          } finally {
+                            setAiLoading(false);
+                          }
+                        }}
+                        className="btn-ai-sparkle"
+                        style={{
+                          fontSize: '0.78rem',
+                          background: 'linear-gradient(135deg, #6C63FF, #3ECFCF)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✨ Generate with AI
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     className="form-input"
@@ -157,6 +195,16 @@ const UrlForm = ({ onSubmit, isLoading, planId = 'free', urlsCreated = 0, urlsLi
                     disabled={isLoading}
                   />
                   <span className="input-hint-info">Letters, numbers, hyphens, and underscores only.</span>
+
+                  <SmartAliasSuggestions
+                    aliases={aiData?.aliases}
+                    category={aiData?.category}
+                    tags={aiData?.tags}
+                    summary={aiData?.summary}
+                    selectedAlias={customCode}
+                    onSelectAlias={(alias) => setCustomCode(alias)}
+                    loading={aiLoading}
+                  />
                 </>
               )}
             </div>

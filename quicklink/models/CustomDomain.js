@@ -114,7 +114,6 @@ const customDomainSchema = new mongoose.Schema({
 
 // Indexes for query optimization
 customDomainSchema.index({ userId: 1 });
-customDomainSchema.index({ domain: 1 }, { unique: true });
 customDomainSchema.index({ status: 1 });
 customDomainSchema.index({ sslExpiresAt: 1 });
 
@@ -190,7 +189,7 @@ customDomainSchema.methods.getDnsInstructions = function () {
 /**
  * Pre-save hook to update timestamps and validate domain.
  */
-customDomainSchema.pre('save', function (next) {
+customDomainSchema.pre('save', function () {
   // Update the updatedAt timestamp on every save
   this.updatedAt = new Date();
 
@@ -198,7 +197,7 @@ customDomainSchema.pre('save', function (next) {
   if (this.isModified('domain')) {
     // Validate domain format
     if (!isValidDomainFormat(this.domain)) {
-      return next(new Error('Invalid domain format. Please enter a valid domain (e.g., mybrand.link)'));
+      throw new Error('Invalid domain format. Please enter a valid domain (e.g., mybrand.link)');
     }
 
     // Extract the subdomain/prefix to check against reserved list
@@ -206,11 +205,9 @@ customDomainSchema.pre('save', function (next) {
     const prefix = domainParts[0].toLowerCase();
 
     if (RESERVED_DOMAINS.includes(prefix)) {
-      return next(new Error(`The domain prefix "${prefix}" is reserved and cannot be used`));
+      throw new Error(`The domain prefix "${prefix}" is reserved and cannot be used`);
     }
   }
-
-  next();
 });
 
 module.exports = mongoose.model('CustomDomain', customDomainSchema);

@@ -65,7 +65,6 @@ const teamUrlSchema = new mongoose.Schema({
 
 // Indexes
 teamUrlSchema.index({ teamId: 1 });
-teamUrlSchema.index({ urlId: 1 }, { unique: true });
 teamUrlSchema.index({ createdBy: 1 });
 teamUrlSchema.index({ collectionId: 1 });
 teamUrlSchema.index({ tags: 1 });
