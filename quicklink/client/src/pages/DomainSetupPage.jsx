@@ -20,7 +20,6 @@ import DomainHealthCard from '../components/domain/DomainHealthCard';
 import UpgradeForDomainPrompt from '../components/domain/UpgradeForDomainPrompt';
 import SEOHead from '../components/seo/SEOHead';
 import { FiGlobe, FiCheck, FiTrash2, FiStar, FiRefreshCw, FiX } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
 
 const DomainSetupPage = () => {
   const { user } = useAuth();

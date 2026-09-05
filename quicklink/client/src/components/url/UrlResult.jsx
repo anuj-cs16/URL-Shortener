@@ -17,7 +17,7 @@ import { FiCopy, FiCheck, FiDownload, FiExternalLink, FiBarChart2 } from 'react-
 import { Link } from 'react-router-dom';
 
 const UrlResult = ({ urlData }) => {
-  const { shortUrl, longUrl, shortCode, qrCode, expiresAt, customDomain } = urlData;
+  const { shortUrl, longUrl, shortCode, qrCode, expiresAt } = urlData;
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {

@@ -8,7 +8,6 @@ import InviteModal from '../components/team/InviteModal';
 export const TeamMembersPage = () => {
   const { teamId } = useParams();
   const {
-    teamDetails,
     members,
     invites,
     userRole,

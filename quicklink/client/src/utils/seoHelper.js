@@ -4,7 +4,6 @@
  * @module     utils/seoHelper
  */
 
-'use strict';
 
 /**
  * Metadata configuration mapping by page keys.

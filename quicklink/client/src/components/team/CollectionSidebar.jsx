@@ -9,8 +9,8 @@ export const CollectionSidebar = ({
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState('');
-  const [color, setColor] = useState('#6C63FF');
-  const [icon, setIcon] = useState('📁');
+  const color = '#6C63FF';
+  const icon = '📁';
 
   const handleCreate = async (e) => {
     e.preventDefault();

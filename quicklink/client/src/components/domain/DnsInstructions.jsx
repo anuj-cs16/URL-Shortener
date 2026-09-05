@@ -55,7 +55,6 @@ const DnsInstructions = ({ domain, token, recordType = 'TXT' }) => {
   const [activeTab, setActiveTab] = useState('Cloudflare');
   const [copiedField, setCopiedField] = useState('');
 
-  const hostValue = recordType === 'TXT' ? `_quicklink-verify.${domain}` : domain;
   const recordValue = recordType === 'TXT' ? `quicklink-verify=${token}` : token;
 
   const handleCopy = (text, field) => {
